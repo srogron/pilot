@@ -2,6 +2,7 @@
 <html lang="fr">
 <head>
 <meta charset="UTF-8">
+<script src="https://accounts.google.com/gsi/client" async defer></script>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Pilot</title>
 <style>
@@ -955,39 +956,24 @@
   <div class="setup-card">
     <div class="setup-title">Pilot</div>
     <div class="setup-subtitle">Gestion de tâches · Family Office</div>
-
-    <div class="profile-buttons">
-      <button class="profile-btn" onclick="selectProfile('main')" id="btn-main">
-        <span class="profile-icon">👤</span>
-        Stéphane
-      </button>
-      <button class="profile-btn" onclick="selectProfile('junior')" id="btn-junior">
-        <span class="profile-icon">👤</span>
-        Félix
-      </button>
+    <div style="margin-bottom:20px;font-size:13px;color:var(--text-muted);text-align:center">Connectez-vous avec votre compte Google</div>
+    <div id="g_id_onload"
+      data-client_id="823896304865-squi60u424rn5i4vq4hlt7d2sob7pv04.apps.googleusercontent.com"
+      data-callback="handleGoogleLogin"
+      data-auto_prompt="false">
     </div>
-
-    <div id="pin-section">
-      <div class="pin-label">Code PIN</div>
-      <div class="pin-inputs">
-        <input class="pin-input" type="password" maxlength="1" id="pin1" oninput="pinNext(this,'pin2')" onkeydown="pinBack(event,this,'')">
-        <input class="pin-input" type="password" maxlength="1" id="pin2" oninput="pinNext(this,'pin3')" onkeydown="pinBack(event,this,'pin1')">
-        <input class="pin-input" type="password" maxlength="1" id="pin3" oninput="pinNext(this,'pin4')" onkeydown="pinBack(event,this,'pin2')">
-        <input class="pin-input" type="password" maxlength="1" id="pin4" oninput="pinNext(this,'')" onkeydown="pinBack(event,this,'pin3')">
+    <div style="display:flex;justify-content:center">
+      <div class="g_id_signin"
+        data-type="standard"
+        data-size="large"
+        data-theme="outline"
+        data-text="sign_in_with"
+        data-shape="rectangular"
+        data-logo_alignment="left"
+        data-width="320">
       </div>
-      <div class="pin-error" id="pin-error">Code PIN incorrect</div>
     </div>
-
-    <div id="sheets-config" style="display:none">
-      <div class="config-label">Configuration Google Sheets (optionnel)</div>
-      <input class="config-input" type="text" id="sheet-id-input" placeholder="ID du Google Sheet" value="">
-      <input class="config-input" type="text" id="sheet-api-key" placeholder="Clé API Google" value="">
-      <div class="config-help">💡 Laissez vide pour utiliser le stockage local (mode démo). Pour la synchronisation : créez un Google Sheet, activez l'API Sheets, et collez l'ID et la clé API ci-dessus.</div>
-    </div>
-
-    <button class="btn-primary" id="login-btn" onclick="login()" style="margin-top:20px">
-      Accéder
-    </button>
+    <div class="pin-error" id="login-error" style="display:none;margin-top:12px;text-align:center">Accès non autorisé pour ce compte Google.</div>
   </div>
 </div>
 
@@ -1178,13 +1164,39 @@
 <script>
 // ===== STATE =====
 let currentUser = null;
+let currentUserEmail = null;
+let currentUserName = null;
 let currentFicheId = null;
 let data = { fiches: [], tasks: [] };
 let dashboardFilters = { status: 'all', assignee: 'all' };
 let syncInterval = null;
-const CORRECT_PIN = '1234'; // Changer ici
-let sheetId = '';
-let useSheets = false;
+let sheetId = "https://script.google.com/macros/s/AKfycbwGar3a6g0RcPnPL7bCtlwQYL22dCI5TIdwoMiuCS4hK48kLpWmTXWRJzMtHQRwBrHN_w/exec";
+let useSheets = true;
+
+// Authorized users: email -> role ('main' or 'junior')
+const AUTHORIZED_USERS = {
+  "srogron@gmail.com": "main"
+  // Ajouter Félix ici : "felix@gmail.com": "junior"
+};
+
+function handleGoogleLogin(response) {
+  const payload = JSON.parse(atob(response.credential.split('.')[1]));
+  const email = payload.email;
+  const name = payload.given_name || payload.name;
+  if (!AUTHORIZED_USERS[email]) {
+    document.getElementById('login-error').style.display = 'block';
+    return;
+  }
+  currentUserEmail = email;
+  currentUserName = name;
+  currentUser = AUTHORIZED_USERS[email];
+  document.getElementById('setup-screen').style.display = 'none';
+  document.getElementById('app').style.display = 'block';
+  document.getElementById('user-badge').textContent = name;
+  initFromStorage();
+  loadData();
+  startAutoSync();
+}
 
 // ===== INIT =====
 function initFromStorage() {
@@ -1192,78 +1204,20 @@ function initFromStorage() {
   if (saved) {
     try { data = JSON.parse(saved); } catch(e) {}
   }
-  sheetId = localStorage.getItem('fo_script_url') || '';
-  if (sheetId) {
-    useSheets = true;
-    document.getElementById('sheet-id-input').value = sheetId;
-  }
+  // sheetId and useSheets are pre-configured
 }
 
-// ===== PROFILE SELECTION =====
-function selectProfile(type) {
-  document.getElementById('btn-main').classList.toggle('selected', type === 'main');
-  document.getElementById('btn-junior').classList.toggle('selected', type === 'junior');
-  currentUser = type;
-  const pinSection = document.getElementById('pin-section');
-  const configSection = document.getElementById('sheets-config');
-  if (type === 'main') {
-    pinSection.style.display = 'block';
-    configSection.style.display = 'block';
-    document.getElementById('pin1').focus();
-  } else {
-    pinSection.style.display = 'none';
-    configSection.style.display = 'none';
-  }
-}
-
-function pinNext(el, nextId) {
-  if (el.value && nextId) document.getElementById(nextId).focus();
-  if (!nextId) login();
-}
-
-function pinBack(e, el, prevId) {
-  if (e.key === 'Backspace' && !el.value && prevId) document.getElementById(prevId).focus();
-}
-
-function login() {
-  if (!currentUser) { alert('Choisissez un profil'); return; }
-
-  if (currentUser === 'main') {
-    const pin = ['pin1','pin2','pin3','pin4'].map(id => document.getElementById(id).value).join('');
-    if (pin !== CORRECT_PIN) {
-      document.getElementById('pin-error').style.display = 'block';
-      ['pin1','pin2','pin3','pin4'].forEach(id => document.getElementById(id).value = '');
-      document.getElementById('pin1').focus();
-      return;
-    }
-    // Save Apps Script URL
-    sheetId = document.getElementById('sheet-id-input').value.trim();
-    if (sheetId) {
-      localStorage.setItem('fo_script_url', sheetId);
-      useSheets = true;
-    }
-  }
-
-  document.getElementById('setup-screen').style.display = 'none';
-  document.getElementById('app').style.display = 'block';
-  document.getElementById('user-badge').textContent = currentUser === 'main' ? 'Stéphane' : 'Félix';
-
-  initFromStorage();
-  loadData();
-  startAutoSync();
-}
+// ===== PROFILE SELECTION (handled by Google OAuth) =====
 
 function logout() {
   currentUser = null;
+  currentUserEmail = null;
+  currentUserName = null;
   document.getElementById('setup-screen').style.display = 'flex';
   document.getElementById('app').style.display = 'none';
-  ['pin1','pin2','pin3','pin4'].forEach(id => document.getElementById(id).value = '');
-  document.getElementById('pin-error').style.display = 'none';
-  document.getElementById('btn-main').classList.remove('selected');
-  document.getElementById('btn-junior').classList.remove('selected');
-  document.getElementById('pin-section').style.display = 'none';
-  document.getElementById('sheets-config').style.display = 'none';
   if (syncInterval) clearInterval(syncInterval);
+  // Reload to reset Google Sign-In
+  setTimeout(() => location.reload(), 100);
 }
 
 // ===== VIEWS =====
