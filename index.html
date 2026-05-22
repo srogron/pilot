@@ -23,8 +23,9 @@
     --suivi-bg: #F5EEF8;
     --traitee: #1E8449;
     --traitee-bg: #EAFAF1;
-    --prioritaire: #B7770D;
-    --prioritaire-bg: #FEF9E7;
+    --verification: #0E7490;
+    --verification-bg: #E0F2FE;
+
     --accent: #1A1814;
     --gold: #B7770D;
     --shadow: 0 2px 12px rgba(0,0,0,0.08);
@@ -245,6 +246,39 @@
 
   .nav-btn:hover { background: rgba(255,255,255,0.1); color: white; }
   .nav-btn.active { background: rgba(255,255,255,0.15); color: white; }
+
+  /* Mobile bottom nav */
+  .mobile-bottom-nav {
+    display: none;
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 56px;
+    background: var(--text);
+    border-top: 1px solid rgba(255,255,255,0.1);
+    z-index: 200;
+    align-items: stretch;
+  }
+
+  .mobile-nav-btn {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: none;
+    background: transparent;
+    color: rgba(255,255,255,0.45);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+    letter-spacing: 0.01em;
+    transition: color 0.15s;
+  }
+
+  .mobile-nav-btn.active { color: white; }
+  .mobile-nav-btn:active { color: rgba(255,255,255,0.8); }
 
   .header-right {
     display: flex;
@@ -688,8 +722,7 @@
   .badge-todo { background: var(--todo-bg); color: var(--todo); }
   .badge-suivi { background: var(--suivi-bg); color: var(--suivi); }
   .badge-traitee { background: var(--traitee-bg); color: var(--traitee); }
-  .badge-prioritaire { background: var(--prioritaire-bg); color: var(--prioritaire); }
-
+  .badge-verification { background: var(--verification-bg); color: var(--verification); }
   /* Notes section */
   .notes-card {
     background: var(--surface);
@@ -785,6 +818,8 @@
   .form-input:focus, .form-select:focus, .form-textarea:focus { border-color: var(--text); }
 
   .form-textarea { min-height: 80px; resize: vertical; line-height: 1.5; }
+  .form-textarea--comment { min-height: 120px; }
+  #edit-task-comment { min-height: 200px; }
 
   .form-checkbox {
     display: flex;
@@ -853,7 +888,7 @@
 
   /* ===== SETUP GUIDE ===== */
   .setup-guide {
-    background: var(--prioritaire-bg);
+    background: #FEF9E7;
     border: 1px solid #F0D080;
     border-radius: var(--radius);
     padding: 16px 20px;
@@ -865,7 +900,7 @@
   .setup-guide-title {
     font-weight: 600;
     margin-bottom: 8px;
-    color: var(--prioritaire);
+    color: #B7770D;
     font-size: 14px;
   }
 
@@ -883,13 +918,14 @@
   @media (max-width: 640px) {
     .app-header { padding: 0 14px; }
     .app-logo { font-size: 15px; }
-    .nav-btn span { display: none; }
-    .app-body { padding: 16px; }
+    .header-nav { display: none; }
+    .app-body { padding: 16px; padding-bottom: 72px; }
     .fiches-grid { grid-template-columns: 1fr; }
     .fiche-sections { grid-template-columns: 1fr; }
     .dashboard-grid { grid-template-columns: 1fr; }
     .header-right .user-badge { display: none; }
     .setup-card { padding: 32px 24px; }
+    .mobile-bottom-nav { display: flex; }
   }
 
   .empty-state {
@@ -902,23 +938,23 @@
   .empty-text { font-size: 14px; }
 
   /* Section colors */
-  .section-prioritaire .section-header { background: var(--prioritaire-bg); }
   .section-urgente .section-header { background: var(--urgent-bg); }
   .section-todo .section-header { background: var(--todo-bg); }
   .section-traitee .section-header { background: var(--traitee-bg); }
   .section-suivi .section-header { background: var(--suivi-bg); }
+  .section-verification .section-header { background: var(--verification-bg); }
 
-  .section-prioritaire .section-dot { background: var(--prioritaire); }
   .section-urgente .section-dot { background: var(--urgent); }
   .section-todo .section-dot { background: var(--todo); }
   .section-traitee .section-dot { background: var(--traitee); }
   .section-suivi .section-dot { background: var(--suivi); }
+  .section-verification .section-dot { background: var(--verification); }
 
-  .section-prioritaire .section-title { color: var(--prioritaire); }
   .section-urgente .section-title { color: var(--urgent); }
   .section-todo .section-title { color: var(--todo); }
   .section-traitee .section-title { color: var(--traitee); }
   .section-suivi .section-title { color: var(--suivi); }
+  .section-verification .section-title { color: var(--verification); }
 
   /* History */
   .task-history {
@@ -938,15 +974,87 @@
     padding: 2px 7px;
     border-radius: 8px;
   }
-  .history-status.prioritaire { background: var(--prioritaire-bg); color: var(--prioritaire); }
-  .history-status.urgente { background: var(--urgent-bg); color: var(--urgent); }
+  .history-status.urgente, .history-status.prioritaire { background: var(--urgent-bg); color: var(--urgent); }
   .history-status.todo { background: var(--todo-bg); color: var(--todo); }
   .history-status.suivi { background: var(--suivi-bg); color: var(--suivi); }
   .history-status.traitee { background: var(--traitee-bg); color: var(--traitee); }
+  .history-status.verification { background: var(--verification-bg); color: var(--verification); }
   .history-meta {
     font-size: 10px;
     color: var(--text-muted);
   }
+
+  /* ===== PIÈCES JOINTES ===== */
+  .attachment-zone {
+    border: 2px dashed var(--border);
+    border-radius: 8px;
+    transition: border-color 0.2s, background 0.2s;
+  }
+  .attachment-zone.drag-over {
+    border-color: var(--verification);
+    background: var(--verification-bg);
+  }
+  .attachment-drop {
+    padding: 12px 16px;
+    text-align: center;
+    color: var(--text-muted);
+    font-size: 13px;
+    cursor: pointer;
+    user-select: none;
+  }
+  .attachment-drop:hover { color: var(--text); }
+  .attachment-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 12px;
+    border-top: 1px solid var(--border);
+    font-size: 12px;
+  }
+  .attachment-name {
+    flex: 1;
+    color: var(--verification);
+    text-decoration: none;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .attachment-name:hover { text-decoration: underline; }
+  .attachment-delete {
+    flex-shrink: 0;
+    border: none;
+    background: transparent;
+    color: var(--text-muted);
+    cursor: pointer;
+    font-size: 11px;
+    padding: 2px 4px;
+    border-radius: 4px;
+  }
+  .attachment-delete:hover { color: var(--urgent); background: var(--urgent-bg); }
+  .attachment-uploading {
+    padding: 8px 12px;
+    font-size: 12px;
+    color: var(--text-muted);
+    text-align: center;
+    border-top: 1px solid var(--border);
+  }
+  .task-attachments {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+    margin-top: 6px;
+    padding-top: 6px;
+    border-top: 1px solid var(--border);
+  }
+  .task-attachment-link {
+    font-size: 11px;
+    color: var(--verification);
+    text-decoration: none;
+    background: var(--verification-bg);
+    padding: 2px 8px;
+    border-radius: 10px;
+  }
+  .task-attachment-link:hover { text-decoration: underline; }
 </style>
 </head>
 <body>
@@ -974,6 +1082,35 @@
       </div>
     </div>
     <div class="pin-error" id="login-error" style="display:none;margin-top:12px;text-align:center">Accès non autorisé pour ce compte Google.</div>
+    <div style="margin-top:20px;text-align:center">
+      <div style="font-size:11px;color:var(--text-muted);margin-bottom:8px">— ou —</div>
+      <div style="display:flex;gap:8px;justify-content:center">
+        <button onclick="loginDirect('main')" style="padding:10px 20px;background:var(--text);color:white;border:none;border-radius:8px;font-family:'DM Sans',sans-serif;font-size:13px;font-weight:500;cursor:pointer">Stéphane</button>
+        <button onclick="startFelixLogin()" style="padding:10px 20px;background:var(--surface2);color:var(--text);border:1px solid var(--border);border-radius:8px;font-family:'DM Sans',sans-serif;font-size:13px;font-weight:500;cursor:pointer">Félix</button>
+      </div>
+      <!-- Zone PIN Félix -->
+      <div id="felix-pin-zone" style="display:none;margin-top:16px">
+        <div id="felix-pin-label" style="font-size:12px;color:var(--text-muted);margin-bottom:8px"></div>
+        <div style="display:flex;gap:8px;justify-content:center;align-items:center">
+          <input id="felix-pin-input" type="password" maxlength="6" inputmode="numeric"
+            placeholder="Code PIN"
+            style="width:120px;padding:8px 12px;border:1.5px solid var(--border);border-radius:8px;font-family:'DM Sans',sans-serif;font-size:16px;text-align:center;letter-spacing:4px;outline:none"
+            onkeydown="if(event.key==='Enter') confirmFelixPin()">
+          <button onclick="confirmFelixPin()" style="padding:8px 16px;background:var(--text);color:white;border:none;border-radius:8px;font-family:'DM Sans',sans-serif;font-size:13px;cursor:pointer">OK</button>
+        </div>
+        <div id="felix-pin-confirm-zone" style="display:none;margin-top:8px">
+          <div style="font-size:12px;color:var(--text-muted);margin-bottom:8px">Confirmez votre code PIN</div>
+          <div style="display:flex;gap:8px;justify-content:center;align-items:center">
+            <input id="felix-pin-confirm" type="password" maxlength="6" inputmode="numeric"
+              placeholder="Confirmer"
+              style="width:120px;padding:8px 12px;border:1.5px solid var(--border);border-radius:8px;font-family:'DM Sans',sans-serif;font-size:16px;text-align:center;letter-spacing:4px;outline:none"
+              onkeydown="if(event.key==='Enter') saveFelixPin()">
+            <button onclick="saveFelixPin()" style="padding:8px 16px;background:var(--text);color:white;border:none;border-radius:8px;font-family:'DM Sans',sans-serif;font-size:13px;cursor:pointer">Créer</button>
+          </div>
+        </div>
+        <div id="felix-pin-error" style="display:none;margin-top:8px;font-size:12px;color:var(--urgent)"></div>
+      </div>
+    </div>
   </div>
 </div>
 
@@ -998,9 +1135,16 @@
         <span class="sync-icon">↻</span>
         <span>Sync</span>
       </button>
+      <button class="sync-btn" id="clean-btn" onclick="cleanLegacyData()" style="display:none">🧹 Nettoyer</button>
       <button class="logout-btn" onclick="logout()">Déconnexion</button>
     </div>
   </header>
+
+  <!-- Mobile bottom navigation -->
+  <nav class="mobile-bottom-nav">
+    <button class="mobile-nav-btn nav-btn active" id="mobile-nav-fiches" onclick="showView('fiches')">Fiches</button>
+    <button class="mobile-nav-btn nav-btn" id="mobile-nav-dashboard" onclick="showView('dashboard')">Tableau de bord</button>
+  </nav>
 
   <div class="app-body">
     <!-- FICHES VIEW -->
@@ -1039,10 +1183,10 @@
       <div class="dashboard-filters" id="dashboard-filters">
         <span class="filter-label">Statut :</span>
         <button class="filter-btn active" onclick="setFilter('status','all', this)">Tous</button>
-        <button class="filter-btn" onclick="setFilter('status','prioritaire', this)">⭐ Prioritaires</button>
         <button class="filter-btn" onclick="setFilter('status','urgente', this)">🔴 Urgentes</button>
         <button class="filter-btn" onclick="setFilter('status','todo', this)">🔵 À faire</button>
         <button class="filter-btn" onclick="setFilter('status','suivi', this)">🟣 Suivi</button>
+        <button class="filter-btn" onclick="setFilter('status','verification', this)">🔍 Vérification</button>
         <button class="filter-btn" onclick="setFilter('status','traitee', this)">✅ Traitées</button>
         <span class="filter-label" style="margin-left:8px">Assigné :</span>
         <button class="filter-btn active" onclick="setFilter('assignee','all', this)" id="filter-assignee-all">Tous</button>
@@ -1089,10 +1233,10 @@
     <div class="form-group">
       <label class="form-label">Statut</label>
       <select class="form-select" id="new-task-status">
-        <option value="prioritaire">⭐ Prioritaire</option>
         <option value="urgente">🔴 Urgente</option>
         <option value="todo">🔵 À faire</option>
         <option value="suivi">🟣 Suivi</option>
+        <option value="verification">🔍 Vérification</option>
         <option value="traitee">✅ Traitée</option>
       </select>
     </div>
@@ -1105,7 +1249,7 @@
     </div>
     <div class="form-group">
       <label class="form-label">Commentaire</label>
-      <textarea class="form-textarea" id="new-task-comment" placeholder="Commentaire (optionnel)..."></textarea>
+      <textarea class="form-textarea form-textarea--comment" id="new-task-comment" placeholder="Commentaire (optionnel)..."></textarea>
     </div>
     <div class="form-group">
       <label class="form-checkbox">
@@ -1130,13 +1274,16 @@
     </div>
     <div class="form-group">
       <label class="form-label">Statut</label>
-      <select class="form-select" id="edit-task-status">
-        <option value="prioritaire">⭐ Prioritaire</option>
+      <select class="form-select" id="edit-task-status" onchange="onEditStatusChange(this.value)">
         <option value="urgente">🔴 Urgente</option>
         <option value="todo">🔵 À faire</option>
         <option value="suivi">🟣 Suivi</option>
+        <option value="verification">🔍 Vérification</option>
         <option value="traitee">✅ Traitée</option>
       </select>
+      <div id="verification-hint" style="display:none;font-size:12px;color:var(--verification);margin-top:6px;padding:6px 8px;background:var(--verification-bg);border-radius:6px">
+        🔍 La tâche sera réassignée à l'autre utilisateur pour vérification.
+      </div>
     </div>
     <div class="form-group">
       <label class="form-label">Assigné à</label>
@@ -1147,12 +1294,22 @@
     </div>
     <div class="form-group">
       <label class="form-label">Commentaire (horodaté automatiquement)</label>
-      <textarea class="form-textarea" id="edit-task-comment" placeholder="Ajouter un commentaire..."></textarea>
+      <textarea class="form-textarea form-textarea--comment" id="edit-task-comment" placeholder="Ajouter un commentaire..."></textarea>
     </div>
     <div class="form-group">
       <label class="form-checkbox">
         <input type="checkbox" id="edit-task-conf"> Tâche confidentielle
       </label>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Pièces jointes</label>
+      <div class="attachment-zone" id="edit-attachment-zone">
+        <div class="attachment-drop" id="edit-attachment-drop" onclick="document.getElementById('edit-attachment-input').click()">
+          📎 Glissez un fichier ici ou cliquez pour ajouter
+        </div>
+        <input type="file" id="edit-attachment-input" multiple style="display:none" onchange="handleAttachmentInputChange(this)">
+        <div id="edit-attachment-list"></div>
+      </div>
     </div>
     <div class="modal-actions">
       <button class="btn-cancel" onclick="closeModal('modal-edit-task')">Annuler</button>
@@ -1162,12 +1319,29 @@
 </div>
 
 <script>
+// Nettoyage immédiat — s'exécute avant tout le reste
+(function() {
+  try {
+    const raw = localStorage.getItem('fo_data');
+    if (!raw) return;
+    const d = JSON.parse(raw);
+    let changed = false;
+    (d.tasks || []).forEach(function(t) {
+      if (t.status === 'prioritaire') { t.status = 'urgente'; changed = true; }
+      (t.statusHistory || []).forEach(function(h) {
+        if (h.status === 'prioritaire') { h.status = 'urgente'; changed = true; }
+      });
+    });
+    if (changed) localStorage.setItem('fo_data', JSON.stringify(d));
+  } catch(e) {}
+})();
+
 // ===== STATE =====
 let currentUser = null;
 let currentUserEmail = null;
 let currentUserName = null;
 let currentFicheId = null;
-let data = { fiches: [], tasks: [] };
+let data = { fiches: [], tasks: [], config: {} };
 let dashboardFilters = { status: 'all', assignee: 'all' };
 let syncInterval = null;
 let sheetId = "https://script.google.com/macros/s/AKfycbwGar3a6g0RcPnPL7bCtlwQYL22dCI5TIdwoMiuCS4hK48kLpWmTXWRJzMtHQRwBrHN_w/exec";
@@ -1178,6 +1352,77 @@ const AUTHORIZED_USERS = {
   "srogron@gmail.com": "main"
   // Ajouter Félix ici : "felix@gmail.com": "junior"
 };
+
+function loginDirect(role) {
+  currentUser = role || 'main';
+  currentUserName = currentUser === 'main' ? 'Stéphane' : 'Félix';
+  currentUserEmail = currentUser === 'main' ? 'srogron@gmail.com' : 'frichepi@icloud.com';
+  document.getElementById('setup-screen').style.display = 'none';
+  document.getElementById('app').style.display = 'block';
+  document.getElementById('user-badge').textContent = currentUserName;
+  initFromStorage();
+  loadData();
+  startAutoSync();
+}
+
+function startFelixLogin() {
+  const zone = document.getElementById('felix-pin-zone');
+  const label = document.getElementById('felix-pin-label');
+  const confirmZone = document.getElementById('felix-pin-confirm-zone');
+  const err = document.getElementById('felix-pin-error');
+  const hasPin = !!(data.config && data.config.felixPin);
+  label.textContent = hasPin ? 'Entrez votre code PIN' : 'Créez votre code PIN';
+  confirmZone.style.display = 'none';
+  err.style.display = 'none';
+  document.getElementById('felix-pin-input').value = '';
+  document.getElementById('felix-pin-confirm').value = '';
+  zone.style.display = 'block';
+  setTimeout(() => document.getElementById('felix-pin-input').focus(), 100);
+}
+
+function confirmFelixPin() {
+  const pin = document.getElementById('felix-pin-input').value.trim();
+  const err = document.getElementById('felix-pin-error');
+  if (pin.length < 4) {
+    err.textContent = 'Le code PIN doit contenir au moins 4 chiffres.';
+    err.style.display = 'block'; return;
+  }
+  const stored = data.config && data.config.felixPin;
+  if (stored) {
+    // Connexion
+    if (pin !== stored) {
+      err.textContent = 'Code PIN incorrect.';
+      err.style.display = 'block';
+      document.getElementById('felix-pin-input').value = '';
+      document.getElementById('felix-pin-input').focus();
+      return;
+    }
+    loginDirect('junior');
+  } else {
+    // Création : afficher confirmation
+    err.style.display = 'none';
+    document.getElementById('felix-pin-confirm-zone').style.display = 'block';
+    document.getElementById('felix-pin-confirm').value = '';
+    setTimeout(() => document.getElementById('felix-pin-confirm').focus(), 100);
+  }
+}
+
+function saveFelixPin() {
+  const pin = document.getElementById('felix-pin-input').value.trim();
+  const confirm = document.getElementById('felix-pin-confirm').value.trim();
+  const err = document.getElementById('felix-pin-error');
+  if (pin !== confirm) {
+    err.textContent = 'Les codes ne correspondent pas.';
+    err.style.display = 'block';
+    document.getElementById('felix-pin-confirm').value = '';
+    document.getElementById('felix-pin-confirm').focus();
+    return;
+  }
+  if (!data.config) data.config = {};
+  data.config.felixPin = pin;
+  saveLocal();
+  loginDirect('junior');
+}
 
 function handleGoogleLogin(response) {
   const payload = JSON.parse(atob(response.credential.split('.')[1]));
@@ -1204,7 +1449,14 @@ function initFromStorage() {
   if (saved) {
     try { data = JSON.parse(saved); } catch(e) {}
   }
-  // sheetId and useSheets are pre-configured
+  // Supprimer le statut 'prioritaire' dès le chargement local
+  (data.tasks || []).forEach(t => {
+    if (t.status === 'prioritaire') t.status = 'urgente';
+    (t.statusHistory || []).forEach(h => {
+      if (h.status === 'prioritaire') h.status = 'urgente';
+    });
+  });
+  localStorage.setItem('fo_data', JSON.stringify(data));
 }
 
 // ===== PROFILE SELECTION (handled by Google OAuth) =====
@@ -1226,6 +1478,7 @@ function showView(view) {
   document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
   document.getElementById('view-' + view).classList.add('active');
   document.getElementById('nav-' + view).classList.add('active');
+  document.getElementById('mobile-nav-' + view).classList.add('active');
   if (view === 'dashboard') renderDashboard();
   if (view === 'fiches') renderFicheList();
 }
@@ -1234,6 +1487,43 @@ function showView(view) {
 function saveLocal() {
   localStorage.setItem('fo_data', JSON.stringify(data));
   writeToSheets();
+}
+
+function checkLegacyData() {
+  const hasLegacy = data.tasks.some(t =>
+    t.status === 'prioritaire' ||
+    (t.statusHistory || []).some(h => h.status === 'prioritaire')
+  );
+  const btn = document.getElementById('clean-btn');
+  if (btn) btn.style.display = hasLegacy ? 'inline-flex' : 'none';
+}
+
+async function cleanLegacyData() {
+  let count = 0;
+  data.tasks.forEach(t => {
+    if (t.status === 'prioritaire') { t.status = 'urgente'; count++; }
+    (t.statusHistory || []).forEach(h => {
+      if (h.status === 'prioritaire') { h.status = 'urgente'; }
+    });
+  });
+  await writeToSheets();
+  localStorage.setItem('fo_data', JSON.stringify(data));
+  document.getElementById('clean-btn').style.display = 'none';
+  showSyncStatus('success', `✓ ${count} tâche(s) corrigée(s) et synchronisées`);
+  if (currentFicheId) renderFicheDetail(currentFicheId);
+  else renderFicheList();
+  renderDashboard();
+}
+
+function migrateData() {
+  let changed = false;
+  data.tasks.forEach(t => {
+    if (t.status === 'prioritaire') { t.status = 'urgente'; changed = true; }
+    if (t.statusHistory) t.statusHistory.forEach(h => {
+      if (h.status === 'prioritaire') { h.status = 'urgente'; changed = true; }
+    });
+  });
+  if (changed) saveLocal();
 }
 
 async function loadData() {
@@ -1246,6 +1536,8 @@ async function loadData() {
       showSyncStatus('error', '⚠ Erreur chargement — mode local');
     }
   }
+  migrateData();
+  checkLegacyData();
   renderFicheList();
 }
 
@@ -1289,7 +1581,15 @@ async function loadFromSheets() {
         const obj = JSON.parse(row[2] || '{}');
         if (type === 'fiche') data.fiches.push(obj);
         if (type === 'task') data.tasks.push(obj);
+        if (type === 'config') data.config = { ...data.config, ...obj };
       } catch(e) {}
+    });
+    // Nettoyer les statuts obsolètes avant toute sauvegarde
+    data.tasks.forEach(t => {
+      if (t.status === 'prioritaire') t.status = 'urgente';
+      if (t.statusHistory) t.statusHistory.forEach(h => {
+        if (h.status === 'prioritaire') h.status = 'urgente';
+      });
     });
     saveLocal();
   }
@@ -1301,7 +1601,7 @@ async function writeToSheets() {
     const res = await fetch(sheetId, {
       method: 'POST',
       headers: { 'Content-Type': 'text/plain' },
-      body: JSON.stringify({ action: 'write', fiches: data.fiches, tasks: data.tasks })
+      body: JSON.stringify({ action: 'write', fiches: data.fiches, tasks: data.tasks, config: data.config })
     });
     const json = await res.json();
     if (json.ok) showSyncStatus('success', '✓ Synchronisé avec Google Sheets');
@@ -1321,14 +1621,13 @@ function renderFicheList() {
   }
   grid.innerHTML = fiches.map(f => {
     const tasks = getTasksForFiche(f.id);
-    const counts = { prioritaire: 0, urgente: 0, todo: 0, suivi: 0, traitee: 0 };
+    const counts = { urgente: 0, todo: 0, suivi: 0, verification: 0, traitee: 0 };
     tasks.forEach(t => { if (counts[t.status] !== undefined) counts[t.status]++; });
     return `
       <div class="fiche-card" onclick="openFiche('${f.id}')">
         ${f.confidential ? '<div class="fiche-confidential-badge">🔒</div>' : ''}
         <div class="fiche-card-name">${f.name}</div>
         <div class="fiche-stats">
-          ${counts.prioritaire > 0 ? `<span class="stat-pill badge-prioritaire">⭐ ${counts.prioritaire}</span>` : ''}
           ${counts.urgente > 0 ? `<span class="stat-pill badge-urgent">🔴 ${counts.urgente}</span>` : ''}
           ${counts.todo > 0 ? `<span class="stat-pill badge-todo">🔵 ${counts.todo}</span>` : ''}
           ${counts.suivi > 0 ? `<span class="stat-pill badge-suivi">🟣 ${counts.suivi}</span>` : ''}
@@ -1339,11 +1638,28 @@ function renderFicheList() {
   }).join('');
 }
 
+const FICHE_ORDER = [
+  'Caroline','Matthias','Christophe','Laurent','LaMA',
+  'Rony & Janine','Bastien','Aubépine','Bob','Xavier','Michel'
+];
+
 function getVisibleFiches() {
-  return data.fiches.filter(f => {
+  const fiches = data.fiches.filter(f => {
     if (f.confidential && currentUser !== 'main') return false;
     return true;
   });
+  return fiches.sort((a, b) => {
+    const ia = FICHE_ORDER.findIndex(n => a.name.toLowerCase().includes(n.toLowerCase()));
+    const ib = FICHE_ORDER.findIndex(n => b.name.toLowerCase().includes(n.toLowerCase()));
+    if (ia === -1 && ib === -1) return a.name.localeCompare(b.name);
+    if (ia === -1) return 1;
+    if (ib === -1) return -1;
+    return ia - ib;
+  });
+}
+
+function normalizeStatus(s) {
+  return s === 'prioritaire' ? 'urgente' : s;
 }
 
 function getTasksForFiche(ficheId) {
@@ -1351,7 +1667,7 @@ function getTasksForFiche(ficheId) {
     if (t.ficheId !== ficheId) return false;
     if (t.confidential && currentUser !== 'main') return false;
     return true;
-  });
+  }).map(t => ({ ...t, status: normalizeStatus(t.status) }));
 }
 
 function openNewFicheModal() {
@@ -1397,10 +1713,10 @@ function renderFicheDetail(ficheId) {
   document.getElementById('notes-textarea').value = fiche.notes || '';
 
   const sections = [
-    { key: 'prioritaire', label: 'Prioritaires', cls: 'section-prioritaire' },
     { key: 'urgente', label: 'Urgentes', cls: 'section-urgente' },
     { key: 'todo', label: 'À faire', cls: 'section-todo' },
     { key: 'suivi', label: 'Suivi', cls: 'section-suivi' },
+    { key: 'verification', label: 'Vérification', cls: 'section-verification' },
     { key: 'traitee', label: 'Traitées', cls: 'section-traitee' },
   ];
 
@@ -1447,6 +1763,7 @@ function renderTaskItem(t) {
         <div class="task-desc">${escHtml(t.desc)}</div>
         <div class="task-actions">
           ${hasHistory ? `<button class="task-action-btn" onclick="toggleHistory('${t.id}')" title="Historique">🕐</button>` : ''}
+          ${t.assignee === currentUser && t.status !== 'verification' && t.status !== 'traitee' ? `<button class="task-action-btn" onclick="sendToVerification('${t.id}')" title="Envoyer en vérification" style="color:var(--verification)">🔍</button>` : ''}
           ${currentUser === 'main' || t.assignee === currentUser ? `<button class="task-action-btn" onclick="openEditTask('${t.id}')" title="Modifier">✏️</button>` : ''}
           ${currentUser === 'main' ? `<button class="task-action-btn danger" onclick="deleteTask('${t.id}')" title="Supprimer">🗑</button>` : ''}
         </div>
@@ -1458,8 +1775,104 @@ function renderTaskItem(t) {
         ${statusHistory.length > 0 ? `<span class="task-date" style="color:var(--text-muted);font-style:italic">Modifié ${formatDateTime(statusHistory[statusHistory.length-1].date)}</span>` : ''}
       </div>
       ${lastComment ? `<div class="task-comment">${escHtml(lastComment.text)} <span style="font-size:10px;opacity:0.6">— ${formatDateTime(lastComment.date)}</span></div>` : ''}
+      ${(t.attachments||[]).length > 0 ? `<div class="task-attachments">${(t.attachments||[]).map(a=>`<a href="${escHtml(a.url)}" target="_blank" class="task-attachment-link">📎 ${escHtml(a.name)}</a>`).join('')}</div>` : ''}
       ${historyHtml}
     </div>`;
+}
+
+// ===== PIÈCES JOINTES =====
+let attachDropReady = false;
+
+function initAttachmentDrop() {
+  if (attachDropReady) return;
+  attachDropReady = true;
+  const zone = document.getElementById('edit-attachment-zone');
+  if (!zone) return;
+  zone.addEventListener('dragover', e => { e.preventDefault(); zone.classList.add('drag-over'); });
+  zone.addEventListener('dragleave', e => { if (!zone.contains(e.relatedTarget)) zone.classList.remove('drag-over'); });
+  zone.addEventListener('drop', async e => {
+    e.preventDefault();
+    zone.classList.remove('drag-over');
+    const taskId = document.getElementById('edit-task-id').value;
+    for (const file of e.dataTransfer.files) await handleFileAttachment(file, taskId);
+  });
+}
+
+async function handleAttachmentInputChange(input) {
+  const taskId = document.getElementById('edit-task-id').value;
+  for (const file of input.files) await handleFileAttachment(file, taskId);
+  input.value = '';
+}
+
+async function handleFileAttachment(file, taskId) {
+  if (file.size > 10 * 1024 * 1024) { alert('Fichier trop volumineux (max 10 Mo)'); return; }
+  const list = document.getElementById('edit-attachment-list');
+  const drop = document.getElementById('edit-attachment-drop');
+  const indicator = document.createElement('div');
+  indicator.className = 'attachment-uploading';
+  indicator.textContent = `⏳ Upload de "${file.name}"…`;
+  list.appendChild(indicator);
+  drop.style.opacity = '0.4';
+  drop.style.pointerEvents = 'none';
+  try {
+    const attachment = await uploadAttachment(file);
+    const t = data.tasks.find(x => x.id === taskId);
+    if (!t) return;
+    if (!t.attachments) t.attachments = [];
+    t.attachments.push(attachment);
+    saveLocal();
+    renderModalAttachments(taskId);
+    if (currentFicheId) renderFicheDetail(currentFicheId);
+  } catch(e) {
+    indicator.remove();
+    alert('Erreur upload : ' + e.message);
+  } finally {
+    drop.style.opacity = '';
+    drop.style.pointerEvents = '';
+  }
+}
+
+async function uploadAttachment(file) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = async e => {
+      try {
+        const base64 = e.target.result.split(',')[1];
+        const res = await fetch(sheetId, {
+          method: 'POST',
+          headers: { 'Content-Type': 'text/plain' },
+          body: JSON.stringify({ action: 'upload', fileName: file.name, mimeType: file.type || 'application/octet-stream', fileData: base64 })
+        });
+        const json = await res.json();
+        if (json.ok) resolve({ name: file.name, url: json.url, driveId: json.id, date: now(), uploadedBy: currentUser });
+        else reject(new Error(json.error || 'Erreur serveur'));
+      } catch(err) { reject(err); }
+    };
+    reader.onerror = () => reject(new Error('Erreur lecture fichier'));
+    reader.readAsDataURL(file);
+  });
+}
+
+function renderModalAttachments(taskId) {
+  const t = data.tasks.find(x => x.id === taskId);
+  const list = document.getElementById('edit-attachment-list');
+  if (!list) return;
+  list.innerHTML = (t ? (t.attachments || []) : []).map((a, i) => `
+    <div class="attachment-item">
+      <a href="${escHtml(a.url)}" target="_blank" class="attachment-name">📎 ${escHtml(a.name)}</a>
+      <button class="attachment-delete" onclick="removeAttachment('${taskId}',${i})" title="Supprimer">✕</button>
+    </div>`).join('');
+}
+
+function removeAttachment(taskId, index) {
+  const t = data.tasks.find(x => x.id === taskId);
+  if (!t || !t.attachments) return;
+  if (!confirm(`Supprimer "${t.attachments[index].name}" ?`)) return;
+  t.attachments.splice(index, 1);
+  saveLocal();
+  renderModalAttachments(taskId);
+  if (currentFicheId) renderFicheDetail(currentFicheId);
+  else renderDashboard();
 }
 
 function toggleHistory(taskId) {
@@ -1467,8 +1880,25 @@ function toggleHistory(taskId) {
   if (el) el.style.display = el.style.display === 'none' ? 'block' : 'none';
 }
 
+function sendToVerification(taskId) {
+  const t = data.tasks.find(x => x.id === taskId);
+  if (!t) return;
+  t.status = 'verification';
+  t.assignee = currentUser === 'main' ? 'junior' : 'main';
+  if (!t.statusHistory) t.statusHistory = [];
+  t.statusHistory.push({ status: 'verification', date: now(), user: currentUser });
+  saveLocal();
+  if (currentFicheId) renderFicheDetail(currentFicheId);
+  else renderDashboard();
+}
+
+function onEditStatusChange(val) {
+  const hint = document.getElementById('verification-hint');
+  if (hint) hint.style.display = val === 'verification' ? 'block' : 'none';
+}
+
 function statusLabel(s) {
-  return { prioritaire: '⭐ Prioritaire', urgente: '🔴 Urgente', todo: '🔵 À faire', suivi: '🟣 Suivi', traitee: '✅ Traitée' }[s] || s;
+  return { urgente: '🔴 Urgente', prioritaire: '🔴 Urgente', todo: '🔵 À faire', suivi: '🟣 Suivi', verification: '🔍 Vérification', traitee: '✅ Traitée' }[s] || '—';
 }
 
 function toggleFicheConfidential() {
@@ -1528,10 +1958,12 @@ function openEditTask(taskId) {
   if (!t) return;
   document.getElementById('edit-task-id').value = taskId;
   document.getElementById('edit-task-desc').value = t.desc;
-  document.getElementById('edit-task-status').value = t.status;
+  document.getElementById('edit-task-status').value = normalizeStatus(t.status);
   document.getElementById('edit-task-assignee').value = t.assignee;
   document.getElementById('edit-task-comment').value = '';
   document.getElementById('edit-task-conf').checked = !!t.confidential;
+  renderModalAttachments(taskId);
+  initAttachmentDrop();
   document.getElementById('modal-edit-task').style.display = 'flex';
   setTimeout(() => document.getElementById('edit-task-desc').focus(), 100);
 }
@@ -1545,6 +1977,7 @@ function saveEditTask() {
   t.desc = document.getElementById('edit-task-desc').value.trim();
   t.status = newStatus;
   t.assignee = document.getElementById('edit-task-assignee').value;
+  if (newStatus === 'verification') t.assignee = currentUser === 'main' ? 'junior' : 'main';
   t.confidential = document.getElementById('edit-task-conf').checked;
   if (statusChanged) {
     if (!t.statusHistory) t.statusHistory = [];
@@ -1576,7 +2009,7 @@ function renderDashboard() {
     const fiche = data.fiches.find(f => f.id === t.ficheId);
     if (fiche && fiche.confidential && currentUser !== 'main') return false;
     return true;
-  });
+  }).map(t => ({ ...t, status: normalizeStatus(t.status) }));
 
   if (dashboardFilters.status !== 'all') tasks = tasks.filter(t => t.status === dashboardFilters.status);
   if (dashboardFilters.assignee !== 'all') tasks = tasks.filter(t => t.assignee === dashboardFilters.assignee);
@@ -1586,14 +2019,14 @@ function renderDashboard() {
     return;
   }
 
-  // Sort: prioritaire > urgente > todo > suivi > traitee
-  const order = { prioritaire: 0, urgente: 1, todo: 2, suivi: 3, traitee: 4 };
-  tasks.sort((a, b) => (order[a.status] || 0) - (order[b.status] || 0));
+  // Sort: urgente > todo > suivi > verification > traitee
+  const order = { urgente: 0, todo: 1, suivi: 2, verification: 3, traitee: 4 };
+  tasks.sort((a, b) => (order[a.status] ?? 0) - (order[b.status] ?? 0));
 
   grid.innerHTML = tasks.map(t => {
     const fiche = data.fiches.find(f => f.id === t.ficheId);
-    const badgeClass = { prioritaire: 'badge-prioritaire', urgente: 'badge-urgent', todo: 'badge-todo', suivi: 'badge-suivi', traitee: 'badge-traitee' }[t.status] || '';
-    const badgeLabel = { prioritaire: '⭐ Prioritaire', urgente: '🔴 Urgent', todo: '🔵 À faire', suivi: '🟣 Suivi', traitee: '✅ Traité' }[t.status] || '';
+    const badgeClass = { urgente: 'badge-urgent', todo: 'badge-todo', suivi: 'badge-suivi', verification: 'badge-verification', traitee: 'badge-traitee' }[t.status] || '';
+    const badgeLabel = { urgente: '🔴 Urgent', todo: '🔵 À faire', suivi: '🟣 Suivi', verification: '🔍 Vérification', traitee: '✅ Traité' }[t.status] || '';
     return `
       <div class="dash-task-card" onclick="openFiche('${t.ficheId}');showView('fiches')">
         <div class="dash-task-header">
