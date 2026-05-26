@@ -942,6 +942,7 @@
     .fiche-sections { grid-template-columns: 1fr; }
     .dashboard-grid { grid-template-columns: 1fr; }
     .header-right .user-badge { display: none; }
+    .header-right .diag-only { display: none; }
     .setup-card { padding: 32px 24px; }
     .mobile-bottom-nav { display: flex; }
   }
@@ -1154,8 +1155,8 @@
         <span>Sync</span>
       </button>
       <button class="sync-btn" id="clean-btn" onclick="cleanLegacyData()" style="display:none">🧹 Nettoyer</button>
-      <button class="sync-btn" onclick="exportToExcel()" title="Exporter toutes les données en Excel">📥 Export</button>
-      <button class="sync-btn" onclick="runDiagnostic()" title="Diagnostic" style="background:var(--urgent-bg);color:var(--urgent)">🔍 Diag</button>
+      <button class="sync-btn" id="export-btn" onclick="exportToExcel()" title="Exporter toutes les données en Excel">📥 Export</button>
+      <button class="sync-btn diag-only" onclick="runDiagnostic()" title="Diagnostic" style="background:var(--urgent-bg);color:var(--urgent)">🔍 Diag</button>
       <button class="logout-btn" onclick="logout()">Déconnexion</button>
     </div>
   </header>
