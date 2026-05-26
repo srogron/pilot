@@ -3,7 +3,6 @@
 <head>
 <meta charset="UTF-8">
 <script src="https://accounts.google.com/gsi/client" async defer></script>
-<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js" defer></script>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Pilot</title>
 <style>
@@ -2247,58 +2246,60 @@ function escHtml(str) {
   return (str || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
 }
 
-// ===== EXPORT EXCEL =====
+// ===== EXPORT CSV =====
 function exportToExcel() {
-  const userLabel = { main: 'Stéphane', junior: 'Félix' };
+  const userLabel  = { main: 'Stéphane', junior: 'Félix' };
   const statusLabel = { urgente: 'Urgente', todo: 'À faire', suivi: 'Suivi', verification: 'Vérification', traitee: 'Traitée' };
+  const date = new Date().toISOString().slice(0, 10);
 
-  // Feuille 1 — Fiches
-  const fichesRows = [['Nom du client', 'Notes', 'Confidentiel', 'Créé le']];
+  function csvRow(cells) {
+    return cells.map(c => '"' + String(c || '').replace(/"/g, '""') + '"').join(';');
+  }
+  function download(content, filename) {
+    const bom = '﻿'; // UTF-8 BOM pour Excel
+    const blob = new Blob([bom + content], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url; a.download = filename; a.click();
+    URL.revokeObjectURL(url);
+  }
+
+  // Fichier 1 — Fiches
+  const fichesLines = [csvRow(['Nom du client', 'Notes', 'Confidentiel', 'Créé le'])];
   (data.fiches || []).forEach(f => {
-    fichesRows.push([
+    fichesLines.push(csvRow([
       f.name || '',
       f.notes || '',
       f.confidential ? 'Oui' : 'Non',
       f.createdAt ? formatDateTime(f.createdAt) : ''
-    ]);
+    ]));
   });
+  download(fichesLines.join('\n'), `Pilot_fiches_${date}.csv`);
 
-  // Feuille 2 — Tâches
-  const tasksRows = [['Client', 'Description', 'Statut', 'Assigné à', 'Confidentiel', 'Créé le', 'Commentaires', 'Historique statuts']];
-  (data.tasks || []).forEach(t => {
-    const fiche = (data.fiches || []).find(f => f.id === t.ficheId);
-    const comments = (t.comments || [])
-      .slice().reverse()
-      .map(c => `[${formatDateTime(c.date)} — ${userLabel[c.user] || c.user}] ${c.text}`)
-      .join('\n');
-    const history = (t.statusHistory || [])
-      .map(h => `${formatDateTime(h.date)} → ${statusLabel[h.status] || h.status} (${userLabel[h.user] || h.user})`)
-      .join('\n');
-    tasksRows.push([
-      fiche ? fiche.name : '',
-      t.desc || '',
-      statusLabel[normalizeStatus(t.status)] || t.status || '',
-      userLabel[t.assignee] || t.assignee || '',
-      t.confidential ? 'Oui' : 'Non',
-      t.createdAt ? formatDateTime(t.createdAt) : '',
-      comments,
-      history
-    ]);
-  });
-
-  const wb = XLSX.utils.book_new();
-  const wsFiches = XLSX.utils.aoa_to_sheet(fichesRows);
-  const wsTasks = XLSX.utils.aoa_to_sheet(tasksRows);
-
-  // Largeurs de colonnes
-  wsFiches['!cols'] = [{ wch: 30 }, { wch: 50 }, { wch: 12 }, { wch: 20 }];
-  wsTasks['!cols'] = [{ wch: 25 }, { wch: 40 }, { wch: 15 }, { wch: 12 }, { wch: 12 }, { wch: 20 }, { wch: 60 }, { wch: 50 }];
-
-  XLSX.utils.book_append_sheet(wb, wsFiches, 'Fiches');
-  XLSX.utils.book_append_sheet(wb, wsTasks, 'Tâches');
-
-  const date = new Date().toISOString().slice(0, 10);
-  XLSX.writeFile(wb, `Pilot_sauvegarde_${date}.xlsx`);
+  // Fichier 2 — Tâches (léger délai pour que le navigateur ouvre les deux)
+  setTimeout(() => {
+    const tasksLines = [csvRow(['Client', 'Description', 'Statut', 'Assigné à', 'Confidentiel', 'Créé le', 'Commentaires', 'Historique statuts'])];
+    (data.tasks || []).forEach(t => {
+      const fiche = (data.fiches || []).find(f => f.id === t.ficheId);
+      const comments = (t.comments || []).slice().reverse()
+        .map(c => `[${formatDateTime(c.date)} — ${userLabel[c.user] || c.user}] ${c.text}`)
+        .join(' | ');
+      const history = (t.statusHistory || [])
+        .map(h => `${formatDateTime(h.date)} → ${statusLabel[h.status] || h.status} (${userLabel[h.user] || h.user})`)
+        .join(' | ');
+      tasksLines.push(csvRow([
+        fiche ? fiche.name : '',
+        t.desc || '',
+        statusLabel[normalizeStatus(t.status)] || t.status || '',
+        userLabel[t.assignee] || t.assignee || '',
+        t.confidential ? 'Oui' : 'Non',
+        t.createdAt ? formatDateTime(t.createdAt) : '',
+        comments,
+        history
+      ]));
+    });
+    download(tasksLines.join('\n'), `Pilot_taches_${date}.csv`);
+  }, 500);
 }
 
 // Init
