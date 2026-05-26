@@ -3,6 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <script src="https://accounts.google.com/gsi/client" async defer></script>
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js" defer></script>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Pilot</title>
 <style>
@@ -706,6 +707,23 @@
     line-height: 1.4;
   }
 
+  .comment-history-item {
+    font-size: 12px;
+    color: var(--text);
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 8px 10px;
+    margin-bottom: 6px;
+    line-height: 1.5;
+  }
+  .comment-history-item:last-child { margin-bottom: 0; }
+  .comment-history-meta {
+    font-size: 10px;
+    color: var(--text-muted);
+    margin-top: 4px;
+  }
+
   /* Status badges */
   .badge {
     display: inline-flex;
@@ -1136,6 +1154,8 @@
         <span>Sync</span>
       </button>
       <button class="sync-btn" id="clean-btn" onclick="cleanLegacyData()" style="display:none">🧹 Nettoyer</button>
+      <button class="sync-btn" onclick="exportToExcel()" title="Exporter toutes les données en Excel">📥 Export</button>
+      <button class="sync-btn" onclick="runDiagnostic()" title="Diagnostic" style="background:var(--urgent-bg);color:var(--urgent)">🔍 Diag</button>
       <button class="logout-btn" onclick="logout()">Déconnexion</button>
     </div>
   </header>
@@ -1310,6 +1330,10 @@
         <input type="file" id="edit-attachment-input" multiple style="display:none" onchange="handleAttachmentInputChange(this)">
         <div id="edit-attachment-list"></div>
       </div>
+    </div>
+    <div id="edit-task-comments-section" style="display:none;margin-bottom:16px;border-top:1px solid var(--border);padding-top:16px">
+      <div style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:0.08em;color:var(--text-muted);margin-bottom:10px">Historique des commentaires</div>
+      <div id="edit-task-comments-list"></div>
     </div>
     <div class="modal-actions">
       <button class="btn-cancel" onclick="closeModal('modal-edit-task')">Annuler</button>
@@ -1573,6 +1597,17 @@ async function loadFromSheets() {
   if (!res.ok) throw new Error('Script error');
   const rows = await res.json();
   if (rows.length > 1) {
+    // Snapshot local complet avant écrasement (fiches + tâches)
+    let localFiches = [], localTasks = [];
+    try {
+      const localRaw = localStorage.getItem('fo_data');
+      if (localRaw) {
+        const localData = JSON.parse(localRaw);
+        localFiches = localData.fiches || [];
+        localTasks  = localData.tasks  || [];
+      }
+    } catch(e) {}
+
     data = { fiches: [], tasks: [] };
     rows.slice(1).forEach(row => {
       if (!row[0]) return;
@@ -1584,14 +1619,39 @@ async function loadFromSheets() {
         if (type === 'config') data.config = { ...data.config, ...obj };
       } catch(e) {}
     });
-    // Nettoyer les statuts obsolètes avant toute sauvegarde
+
+    // Sécurité : si Sheets ne renvoie aucune fiche mais qu'on en a en local,
+    // conserver les fiches locales (Sheets ne doit jamais effacer des données locales)
+    if (data.fiches.length === 0 && localFiches.length > 0) {
+      data.fiches = localFiches;
+    }
+
+    // Nettoyer les statuts obsolètes
     data.tasks.forEach(t => {
       if (t.status === 'prioritaire') t.status = 'urgente';
       if (t.statusHistory) t.statusHistory.forEach(h => {
         if (h.status === 'prioritaire') h.status = 'urgente';
       });
     });
-    saveLocal();
+
+    // Fusionner les commentaires locaux absents de Sheets
+    let hadLocalOnly = false;
+    try {
+      data.tasks.forEach(sheetsTask => {
+        const localTask = localTasks.find(t => t.id === sheetsTask.id);
+        if (!localTask) return;
+        const sheetsDates = new Set((sheetsTask.comments || []).map(c => c.date));
+        const localOnly = (localTask.comments || []).filter(c => !sheetsDates.has(c.date));
+        if (localOnly.length > 0) {
+          sheetsTask.comments = [...(sheetsTask.comments || []), ...localOnly]
+            .sort((a, b) => new Date(a.date) - new Date(b.date));
+          hadLocalOnly = true;
+        }
+      });
+    } catch(e) {}
+
+    localStorage.setItem('fo_data', JSON.stringify(data));
+    if (hadLocalOnly) writeToSheets();
   }
 }
 
@@ -1611,12 +1671,77 @@ async function writeToSheets() {
   }
 }
 
+async function runDiagnostic() {
+  let msg = '=== DIAGNOSTIC PILOT ===\n\n';
+
+  // 1. localStorage
+  try {
+    const lsRaw = localStorage.getItem('fo_data');
+    if (!lsRaw) {
+      msg += '❌ localStorage : VIDE\n';
+    } else {
+      const lsData = JSON.parse(lsRaw);
+      msg += `✅ localStorage : ${(lsData.fiches||[]).length} fiche(s), ${(lsData.tasks||[]).length} tâche(s)\n`;
+    }
+  } catch(e) { msg += '❌ localStorage : erreur — ' + e.message + '\n'; }
+
+  // 2. mémoire
+  msg += `📋 Mémoire : ${(data.fiches||[]).length} fiche(s), ${(data.tasks||[]).length} tâche(s)\n\n`;
+
+  // 3. Google Sheets fetch
+  msg += '⏳ Fetch Google Sheets...\n';
+  try {
+    const res = await fetch(sheetId);
+    msg += `Statut HTTP : ${res.status} ${res.ok ? '✅' : '❌'}\n`;
+    if (res.ok) {
+      const rows = await res.json();
+      const fiches = rows.filter(r => r[0] === 'fiche').length;
+      const tasks  = rows.filter(r => r[0] === 'task').length;
+      msg += `Sheets : ${rows.length} lignes totales, ${fiches} fiche(s), ${tasks} tâche(s)\n`;
+      if (rows.length <= 1) msg += '⚠️ Sheets ne renvoie qu\'une ligne (header) — données absentes\n';
+    }
+  } catch(e) { msg += '❌ Fetch échoué : ' + e.message + '\n'; }
+
+  alert(msg);
+}
+
+function restoreFromLocalStorage() {
+  try {
+    const lsRaw = localStorage.getItem('fo_data');
+    if (!lsRaw) return alert('Aucune donnée en cache local.');
+    const lsData = JSON.parse(lsRaw);
+    if ((lsData.fiches || []).length === 0) return alert('Le cache local ne contient aucune fiche.');
+    data.fiches = lsData.fiches;
+    data.tasks  = lsData.tasks || data.tasks;
+    saveLocal();
+    renderFicheList();
+  } catch(e) { alert('Erreur lors de la restauration : ' + e.message); }
+}
+
 // ===== FICHES =====
 function renderFicheList() {
   const grid = document.getElementById('fiches-grid');
   const fiches = getVisibleFiches();
   if (fiches.length === 0) {
-    grid.innerHTML = '<div class="empty-state"><div class="empty-icon">📂</div><div class="empty-text">Aucune fiche — créez votre première fiche client</div></div>';
+    let lsInfo = 'localStorage vide';
+    let lsFiches = [];
+    try {
+      const lsRaw = localStorage.getItem('fo_data');
+      if (lsRaw) {
+        lsFiches = JSON.parse(lsRaw).fiches || [];
+        lsInfo = lsFiches.length > 0
+          ? lsFiches.length + ' fiche(s) trouvée(s) en cache local'
+          : 'localStorage présent mais aucune fiche';
+      }
+    } catch(e) { lsInfo = 'Erreur lecture localStorage'; }
+
+    grid.innerHTML = `<div class="empty-state">
+      <div class="empty-icon">📂</div>
+      <div class="empty-text">Aucune fiche visible</div>
+      <div style="font-size:12px;color:var(--text-muted);margin-top:8px">${lsInfo}</div>
+      ${lsFiches.length > 0 ? `<button onclick="restoreFromLocalStorage()" style="margin-top:12px;padding:8px 16px;background:var(--text);color:white;border:none;border-radius:8px;font-size:13px;cursor:pointer">Restaurer depuis le cache local</button>` : ''}
+      <button onclick="syncNow()" style="margin-top:8px;padding:8px 16px;background:var(--surface2);color:var(--text);border:1px solid var(--border);border-radius:8px;font-size:13px;cursor:pointer">Resynchroniser depuis Sheets</button>
+    </div>`;
     return;
   }
   grid.innerHTML = fiches.map(f => {
@@ -1744,7 +1869,7 @@ function renderFicheDetail(ficheId) {
 function renderTaskItem(t) {
   const assigneeLabel = t.assignee === 'main' ? 'Stéphane' : 'Félix';
   const statusHistory = t.statusHistory || [];
-  const lastComment = t.comments && t.comments.length > 0 ? t.comments[t.comments.length - 1] : null;
+  const allComments = t.comments && t.comments.length > 0 ? [...t.comments].reverse() : [];
   const hasHistory = statusHistory.length > 1;
 
   // Build status history HTML (last 3 entries, most recent first)
@@ -1774,7 +1899,7 @@ function renderTaskItem(t) {
         ${t.confidential ? '<span class="task-confidential-icon">🔒</span>' : ''}
         ${statusHistory.length > 0 ? `<span class="task-date" style="color:var(--text-muted);font-style:italic">Modifié ${formatDateTime(statusHistory[statusHistory.length-1].date)}</span>` : ''}
       </div>
-      ${lastComment ? `<div class="task-comment">${escHtml(lastComment.text)} <span style="font-size:10px;opacity:0.6">— ${formatDateTime(lastComment.date)}</span></div>` : ''}
+      ${allComments.map(c => `<div class="task-comment">${escHtml(c.text)} <span style="font-size:10px;opacity:0.6">— ${formatDateTime(c.date)}</span></div>`).join('')}
       ${(t.attachments||[]).length > 0 ? `<div class="task-attachments">${(t.attachments||[]).map(a=>`<a href="${escHtml(a.url)}" target="_blank" class="task-attachment-link">📎 ${escHtml(a.name)}</a>`).join('')}</div>` : ''}
       ${historyHtml}
     </div>`;
@@ -1962,6 +2087,23 @@ function openEditTask(taskId) {
   document.getElementById('edit-task-assignee').value = t.assignee;
   document.getElementById('edit-task-comment').value = '';
   document.getElementById('edit-task-conf').checked = !!t.confidential;
+
+  const comments = t.comments && t.comments.length > 0 ? [...t.comments].reverse() : [];
+  const section = document.getElementById('edit-task-comments-section');
+  const list = document.getElementById('edit-task-comments-list');
+  const userLabel = { main: 'Stéphane', junior: 'Félix' };
+  section.style.display = 'block';
+  if (comments.length > 0) {
+    list.innerHTML = comments.map(c =>
+      `<div class="comment-history-item">
+        <div style="font-size:12px;color:var(--text);line-height:1.5">${escHtml(c.text)}</div>
+        <div class="comment-history-meta">${userLabel[c.user] || c.user} — ${formatDateTime(c.date)}</div>
+      </div>`
+    ).join('');
+  } else {
+    list.innerHTML = '<div style="font-size:12px;color:var(--text-muted);font-style:italic">Aucun commentaire enregistré</div>';
+  }
+
   renderModalAttachments(taskId);
   initAttachmentDrop();
   document.getElementById('modal-edit-task').style.display = 'flex';
@@ -2102,6 +2244,60 @@ function formatDate(iso) {
 
 function escHtml(str) {
   return (str || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+// ===== EXPORT EXCEL =====
+function exportToExcel() {
+  const userLabel = { main: 'Stéphane', junior: 'Félix' };
+  const statusLabel = { urgente: 'Urgente', todo: 'À faire', suivi: 'Suivi', verification: 'Vérification', traitee: 'Traitée' };
+
+  // Feuille 1 — Fiches
+  const fichesRows = [['Nom du client', 'Notes', 'Confidentiel', 'Créé le']];
+  (data.fiches || []).forEach(f => {
+    fichesRows.push([
+      f.name || '',
+      f.notes || '',
+      f.confidential ? 'Oui' : 'Non',
+      f.createdAt ? formatDateTime(f.createdAt) : ''
+    ]);
+  });
+
+  // Feuille 2 — Tâches
+  const tasksRows = [['Client', 'Description', 'Statut', 'Assigné à', 'Confidentiel', 'Créé le', 'Commentaires', 'Historique statuts']];
+  (data.tasks || []).forEach(t => {
+    const fiche = (data.fiches || []).find(f => f.id === t.ficheId);
+    const comments = (t.comments || [])
+      .slice().reverse()
+      .map(c => `[${formatDateTime(c.date)} — ${userLabel[c.user] || c.user}] ${c.text}`)
+      .join('\n');
+    const history = (t.statusHistory || [])
+      .map(h => `${formatDateTime(h.date)} → ${statusLabel[h.status] || h.status} (${userLabel[h.user] || h.user})`)
+      .join('\n');
+    tasksRows.push([
+      fiche ? fiche.name : '',
+      t.desc || '',
+      statusLabel[normalizeStatus(t.status)] || t.status || '',
+      userLabel[t.assignee] || t.assignee || '',
+      t.confidential ? 'Oui' : 'Non',
+      t.createdAt ? formatDateTime(t.createdAt) : '',
+      comments,
+      history
+    ]);
+  });
+
+  const wb = XLSX.utils.book_new();
+  const wsFiches = XLSX.utils.aoa_to_sheet(fichesRows);
+  const wsTasks = XLSX.utils.aoa_to_sheet(tasksRows);
+
+  // Largeurs de colonnes
+  wsFiches['!cols'] = [{ wch: 30 }, { wch: 50 }, { wch: 12 }, { wch: 20 }];
+  wsTasks['!cols'] = [{ wch: 25 }, { wch: 40 }, { wch: 15 }, { wch: 12 }, { wch: 12 }, { wch: 20 }, { wch: 60 }, { wch: 50 }];
+
+  XLSX.utils.book_append_sheet(wb, wsFiches, 'Fiches');
+  XLSX.utils.book_append_sheet(wb, wsTasks, 'Tâches');
+
+  const date = new Date().toISOString().slice(0, 10);
+  XLSX.writeFile(wb, `Pilot_sauvegarde_${date}.xlsx`);
 }
 
 // Init
