@@ -636,13 +636,21 @@
     margin-bottom: 6px;
   }
 
+  .task-title {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--text);
+    line-height: 1.3;
+    flex: 1;
+  }
   .task-desc {
     font-size: 13px;
-    font-weight: 500;
-    color: var(--text);
+    font-weight: 400;
+    color: var(--text-muted);
     line-height: 1.4;
     flex: 1;
     cursor: pointer;
+    margin-top: 2px;
   }
 
   .task-actions {
@@ -1247,6 +1255,10 @@
   <div class="modal" onclick="event.stopPropagation()">
     <div class="modal-title">Nouvelle tâche</div>
     <div class="form-group">
+      <label class="form-label">Titre</label>
+      <input class="form-input" id="new-task-title" placeholder="Titre de la tâche..." style="width:100%;padding:10px 12px;border:1.5px solid var(--border);border-radius:8px;font-family:'DM Sans',sans-serif;font-size:14px;background:var(--bg);color:var(--text);outline:none;box-sizing:border-box">
+    </div>
+    <div class="form-group">
       <label class="form-label">Description</label>
       <textarea class="form-textarea" id="new-task-desc" placeholder="Description de la tâche..."></textarea>
     </div>
@@ -1288,6 +1300,10 @@
   <div class="modal" onclick="event.stopPropagation()">
     <div class="modal-title">Modifier la tâche</div>
     <input type="hidden" id="edit-task-id">
+    <div class="form-group">
+      <label class="form-label">Titre</label>
+      <input class="form-input" id="edit-task-title" placeholder="Titre de la tâche..." style="width:100%;padding:10px 12px;border:1.5px solid var(--border);border-radius:8px;font-family:'DM Sans',sans-serif;font-size:14px;background:var(--bg);color:var(--text);outline:none;box-sizing:border-box">
+    </div>
     <div class="form-group">
       <label class="form-label">Description</label>
       <textarea class="form-textarea" id="edit-task-desc"></textarea>
@@ -1885,11 +1901,14 @@ function renderTaskItem(t) {
   return `
     <div class="task-item" id="task-${t.id}">
       <div class="task-item-header">
-        <div class="task-desc">${escHtml(t.desc)}</div>
+        <div style="flex:1">
+          ${t.title ? `<div class="task-title">${escHtml(t.title)}</div>` : ''}
+          <div class="task-desc">${escHtml(t.desc)}</div>
+        </div>
         <div class="task-actions">
           ${hasHistory ? `<button class="task-action-btn" onclick="toggleHistory('${t.id}')" title="Historique">🕐</button>` : ''}
           ${t.assignee === currentUser && t.status !== 'verification' && t.status !== 'traitee' ? `<button class="task-action-btn" onclick="sendToVerification('${t.id}')" title="Envoyer en vérification" style="color:var(--verification)">🔍</button>` : ''}
-          ${currentUser === 'main' || t.assignee === currentUser ? `<button class="task-action-btn" onclick="openEditTask('${t.id}')" title="Modifier">✏️</button>` : ''}
+          <button class="task-action-btn" onclick="openEditTask('${t.id}')" title="Modifier">✏️</button>
           ${currentUser === 'main' ? `<button class="task-action-btn danger" onclick="deleteTask('${t.id}')" title="Supprimer">🗑</button>` : ''}
         </div>
       </div>
@@ -1899,7 +1918,7 @@ function renderTaskItem(t) {
         ${t.confidential ? '<span class="task-confidential-icon">🔒</span>' : ''}
         ${statusHistory.length > 0 ? `<span class="task-date" style="color:var(--text-muted);font-style:italic">Modifié ${formatDateTime(statusHistory[statusHistory.length-1].date)}</span>` : ''}
       </div>
-      ${allComments.map(c => `<div class="task-comment">${escHtml(c.text)} <span style="font-size:10px;opacity:0.6">— ${formatDateTime(c.date)}</span></div>`).join('')}
+      ${allComments.map(c => `<div class="task-comment">${escHtml(c.text)} <span style="font-size:10px;opacity:0.6">— ${c.user === 'main' ? 'S' : 'F'} · ${formatDateTime(c.date)}</span></div>`).join('')}
       ${(t.attachments||[]).length > 0 ? `<div class="task-attachments">${(t.attachments||[]).map(a=>`<a href="${escHtml(a.url)}" target="_blank" class="task-attachment-link">📎 ${escHtml(a.name)}</a>`).join('')}</div>` : ''}
       ${historyHtml}
     </div>`;
@@ -2046,6 +2065,7 @@ let newTaskDefaultStatus = 'todo';
 
 function openNewTaskModal(status) {
   newTaskDefaultStatus = status || 'todo';
+  document.getElementById('new-task-title').value = '';
   document.getElementById('new-task-desc').value = '';
   document.getElementById('new-task-status').value = newTaskDefaultStatus;
   document.getElementById('new-task-assignee').value = 'main';
@@ -2062,6 +2082,7 @@ function createTask() {
   const task = {
     id: uid(),
     ficheId: currentFicheId,
+    title: document.getElementById('new-task-title').value.trim(),
     desc,
     status: initialStatus,
     assignee: document.getElementById('new-task-assignee').value,
@@ -2082,6 +2103,7 @@ function openEditTask(taskId) {
   const t = data.tasks.find(x => x.id === taskId);
   if (!t) return;
   document.getElementById('edit-task-id').value = taskId;
+  document.getElementById('edit-task-title').value = t.title || '';
   document.getElementById('edit-task-desc').value = t.desc;
   document.getElementById('edit-task-status').value = normalizeStatus(t.status);
   document.getElementById('edit-task-assignee').value = t.assignee;
@@ -2116,6 +2138,7 @@ function saveEditTask() {
   if (!t) return;
   const newStatus = document.getElementById('edit-task-status').value;
   const statusChanged = newStatus !== t.status;
+  t.title = document.getElementById('edit-task-title').value.trim();
   t.desc = document.getElementById('edit-task-desc').value.trim();
   t.status = newStatus;
   t.assignee = document.getElementById('edit-task-assignee').value;
