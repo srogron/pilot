@@ -1231,7 +1231,7 @@
 
 <!-- MODALS -->
 <!-- New Fiche Modal -->
-<div class="modal-overlay" id="modal-new-fiche" style="display:none" onclick="closeModal('modal-new-fiche')">
+<div class="modal-overlay" id="modal-new-fiche" style="display:none">
   <div class="modal" onclick="event.stopPropagation()">
     <div class="modal-title">Nouvelle fiche</div>
     <div class="form-group">
@@ -1251,7 +1251,7 @@
 </div>
 
 <!-- New Task Modal -->
-<div class="modal-overlay" id="modal-new-task" style="display:none" onclick="closeModal('modal-new-task')">
+<div class="modal-overlay" id="modal-new-task" style="display:none">
   <div class="modal" onclick="event.stopPropagation()">
     <div class="modal-title">Nouvelle tâche</div>
     <div class="form-group">
@@ -1296,7 +1296,7 @@
 </div>
 
 <!-- Edit Task Modal -->
-<div class="modal-overlay" id="modal-edit-task" style="display:none" onclick="closeModal('modal-edit-task')">
+<div class="modal-overlay" id="modal-edit-task" style="display:none">
   <div class="modal" onclick="event.stopPropagation()">
     <div class="modal-title">Modifier la tâche</div>
     <input type="hidden" id="edit-task-id">
@@ -2234,6 +2234,15 @@ function closeModal(id) {
   document.getElementById(id).style.display = 'none';
 }
 
+function setupOverlayClose(id) {
+  const overlay = document.getElementById(id);
+  let downOnOverlay = false;
+  overlay.addEventListener('mousedown', e => { downOnOverlay = e.target === overlay; });
+  overlay.addEventListener('mouseup', e => { if (downOnOverlay && e.target === overlay) closeModal(id); downOnOverlay = false; });
+  overlay.addEventListener('touchstart', e => { downOnOverlay = e.target === overlay; }, { passive: true });
+  overlay.addEventListener('touchend', e => { if (downOnOverlay && e.changedTouches[0] && document.elementFromPoint(e.changedTouches[0].clientX, e.changedTouches[0].clientY) === overlay) closeModal(id); downOnOverlay = false; });
+}
+
 // ===== SYNC STATUS =====
 function showSyncStatus(type, msg) {
   const el = document.getElementById('sync-status');
@@ -2327,6 +2336,9 @@ function exportToExcel() {
 
 // Init
 initFromStorage();
+setupOverlayClose('modal-new-fiche');
+setupOverlayClose('modal-new-task');
+setupOverlayClose('modal-edit-task');
 </script>
 </body>
 </html>
