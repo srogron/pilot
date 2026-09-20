@@ -704,6 +704,23 @@
     color: var(--text-muted);
   }
 
+  .task-accountant-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 3px;
+    font-size: 11px;
+    font-weight: 600;
+    color: #1a6b3c;
+    background: #e6f4ec;
+    border: 1px solid #a8d5b8;
+    border-radius: 5px;
+    padding: 2px 7px;
+    white-space: nowrap;
+  }
+  @media (prefers-color-scheme: dark) {
+    .task-accountant-badge { color: #6fcf97; background: #0d2e1a; border-color: #1e5c36; }
+  }
+
   .task-comment {
     font-size: 12px;
     color: var(--text-muted);
@@ -1220,6 +1237,9 @@
         <button class="filter-btn active" onclick="setFilter('assignee','all', this)" id="filter-assignee-all">Tous</button>
         <button class="filter-btn" onclick="setFilter('assignee','main', this)">Stéphane</button>
         <button class="filter-btn" onclick="setFilter('assignee','junior', this)">Félix</button>
+        <span class="filter-label" style="margin-left:8px">Expert-comptable :</span>
+        <button class="filter-btn active" onclick="setFilter('accountant','all', this)" id="filter-accountant-all">Tous</button>
+        <button class="filter-btn" onclick="setFilter('accountant','yes', this)">🧮 Avec EC</button>
       </div>
       <div class="dashboard-grid" id="dashboard-grid"></div>
     </div>
@@ -1288,6 +1308,14 @@
         <input type="checkbox" id="new-task-conf"> Tâche confidentielle
       </label>
     </div>
+    <div class="form-group">
+      <label class="form-checkbox">
+        <input type="checkbox" id="new-task-accountant" onchange="toggleAccountantField('new')"> Avec l'expert-comptable
+      </label>
+      <div id="new-task-accountant-name-group" style="display:none;margin-top:8px">
+        <input class="form-input" id="new-task-accountant-name" value="FP FIDUCIAIRE / Romain" placeholder="Nom de l'expert-comptable..." style="width:100%;padding:8px 12px;border:1.5px solid var(--border);border-radius:8px;font-family:'DM Sans',sans-serif;font-size:14px;background:var(--bg);color:var(--text);outline:none;box-sizing:border-box">
+      </div>
+    </div>
     <div class="modal-actions">
       <button class="btn-cancel" onclick="closeModal('modal-new-task')">Annuler</button>
       <button class="btn-save" onclick="createTask()">Ajouter</button>
@@ -1338,6 +1366,14 @@
       </label>
     </div>
     <div class="form-group">
+      <label class="form-checkbox">
+        <input type="checkbox" id="edit-task-accountant" onchange="toggleAccountantField('edit')"> Avec l'expert-comptable
+      </label>
+      <div id="edit-task-accountant-name-group" style="display:none;margin-top:8px">
+        <input class="form-input" id="edit-task-accountant-name" value="FP FIDUCIAIRE / Romain" placeholder="Nom de l'expert-comptable..." style="width:100%;padding:8px 12px;border:1.5px solid var(--border);border-radius:8px;font-family:'DM Sans',sans-serif;font-size:14px;background:var(--bg);color:var(--text);outline:none;box-sizing:border-box">
+      </div>
+    </div>
+    <div class="form-group">
       <label class="form-label">Pièces jointes</label>
       <div class="attachment-zone" id="edit-attachment-zone">
         <div class="attachment-drop" id="edit-attachment-drop" onclick="document.getElementById('edit-attachment-input').click()">
@@ -1382,7 +1418,7 @@ let currentUserEmail = null;
 let currentUserName = null;
 let currentFicheId = null;
 let data = { fiches: [], tasks: [], config: {} };
-let dashboardFilters = { status: 'all', assignee: 'all' };
+let dashboardFilters = { status: 'all', assignee: 'all', accountant: 'all' };
 let syncInterval = null;
 let sheetId = "https://script.google.com/macros/s/AKfycbwGar3a6g0RcPnPL7bCtlwQYL22dCI5TIdwoMiuCS4hK48kLpWmTXWRJzMtHQRwBrHN_w/exec";
 let useSheets = true;
@@ -1916,6 +1952,7 @@ function renderTaskItem(t) {
         <span class="task-date">📅 ${formatDate(t.createdAt)}</span>
         <span class="task-assignee">${assigneeLabel}</span>
         ${t.confidential ? '<span class="task-confidential-icon">🔒</span>' : ''}
+        ${t.withAccountant ? `<span class="task-accountant-badge">🧮 ${escHtml(t.accountantName || 'Expert-comptable')}</span>` : ''}
         ${statusHistory.length > 0 ? `<span class="task-date" style="color:var(--text-muted);font-style:italic">Modifié ${formatDateTime(statusHistory[statusHistory.length-1].date)}</span>` : ''}
       </div>
       ${allComments.map(c => `<div class="task-comment">${escHtml(c.text)} <span style="font-size:10px;opacity:0.6">— ${c.user === 'main' ? 'S' : 'F'} · ${formatDateTime(c.date)}</span></div>`).join('')}
@@ -2071,6 +2108,9 @@ function openNewTaskModal(status) {
   document.getElementById('new-task-assignee').value = 'main';
   document.getElementById('new-task-comment').value = '';
   document.getElementById('new-task-conf').checked = false;
+  document.getElementById('new-task-accountant').checked = false;
+  document.getElementById('new-task-accountant-name').value = 'FP FIDUCIAIRE / Romain';
+  document.getElementById('new-task-accountant-name-group').style.display = 'none';
   document.getElementById('modal-new-task').style.display = 'flex';
   setTimeout(() => document.getElementById('new-task-desc').focus(), 100);
 }
@@ -2087,6 +2127,8 @@ function createTask() {
     status: initialStatus,
     assignee: document.getElementById('new-task-assignee').value,
     confidential: document.getElementById('new-task-conf').checked,
+    withAccountant: document.getElementById('new-task-accountant').checked,
+    accountantName: document.getElementById('new-task-accountant').checked ? (document.getElementById('new-task-accountant-name').value.trim() || 'FP FIDUCIAIRE / Romain') : '',
     createdAt: now(),
     comments: [],
     statusHistory: [{ status: initialStatus, date: now(), user: currentUser }]
@@ -2109,6 +2151,9 @@ function openEditTask(taskId) {
   document.getElementById('edit-task-assignee').value = t.assignee;
   document.getElementById('edit-task-comment').value = '';
   document.getElementById('edit-task-conf').checked = !!t.confidential;
+  document.getElementById('edit-task-accountant').checked = !!t.withAccountant;
+  document.getElementById('edit-task-accountant-name').value = t.accountantName || 'FP FIDUCIAIRE / Romain';
+  document.getElementById('edit-task-accountant-name-group').style.display = t.withAccountant ? 'block' : 'none';
 
   const comments = t.comments && t.comments.length > 0 ? [...t.comments].reverse() : [];
   const section = document.getElementById('edit-task-comments-section');
@@ -2144,6 +2189,8 @@ function saveEditTask() {
   t.assignee = document.getElementById('edit-task-assignee').value;
   if (newStatus === 'verification') t.assignee = currentUser === 'main' ? 'junior' : 'main';
   t.confidential = document.getElementById('edit-task-conf').checked;
+  t.withAccountant = document.getElementById('edit-task-accountant').checked;
+  t.accountantName = t.withAccountant ? (document.getElementById('edit-task-accountant-name').value.trim() || 'FP FIDUCIAIRE / Romain') : '';
   if (statusChanged) {
     if (!t.statusHistory) t.statusHistory = [];
     t.statusHistory.push({ status: newStatus, date: now(), user: currentUser });
@@ -2178,6 +2225,7 @@ function renderDashboard() {
 
   if (dashboardFilters.status !== 'all') tasks = tasks.filter(t => t.status === dashboardFilters.status);
   if (dashboardFilters.assignee !== 'all') tasks = tasks.filter(t => t.assignee === dashboardFilters.assignee);
+  if (dashboardFilters.accountant === 'yes') tasks = tasks.filter(t => t.withAccountant);
 
   if (tasks.length === 0) {
     grid.innerHTML = '<div class="empty-state" style="grid-column:1/-1"><div class="empty-icon">✅</div><div class="empty-text">Aucune tâche pour ces filtres</div></div>';
@@ -2203,6 +2251,7 @@ function renderDashboard() {
           <span class="task-date">📅 ${formatDate(t.createdAt)}</span>
           <span class="task-assignee">${t.assignee === 'main' ? 'Stéphane' : 'Félix'}</span>
           ${t.confidential ? '<span style="font-size:11px">🔒</span>' : ''}
+          ${t.withAccountant ? `<span class="task-accountant-badge">🧮 ${escHtml(t.accountantName || 'Expert-comptable')}</span>` : ''}
         </div>
       </div>`;
   }).join('');
@@ -2213,20 +2262,19 @@ let activeAssigneeFilter = null;
 
 function setFilter(type, value, btn) {
   dashboardFilters[type] = value;
-  // Update button active state within group
-  const allBtns = document.querySelectorAll('.filter-btn');
-  // Find siblings (same group) — basic approach
-  if (type === 'status') {
-    document.querySelectorAll('.dashboard-filters .filter-btn').forEach((b, i) => {
-      if (i <= 5) b.classList.remove('active');
-    });
-  } else {
-    document.querySelectorAll('.dashboard-filters .filter-btn').forEach((b, i) => {
-      if (i > 5) b.classList.remove('active');
-    });
-  }
+  const groups = { status: [0,5], assignee: [6,8], accountant: [9,10] };
+  const range = groups[type] || [0, 999];
+  document.querySelectorAll('.dashboard-filters .filter-btn').forEach((b, i) => {
+    if (i >= range[0] && i <= range[1]) b.classList.remove('active');
+  });
   btn.classList.add('active');
   renderDashboard();
+}
+
+function toggleAccountantField(prefix) {
+  const checked = document.getElementById(`${prefix}-task-accountant`).checked;
+  const group = document.getElementById(`${prefix}-task-accountant-name-group`);
+  group.style.display = checked ? 'block' : 'none';
 }
 
 // ===== MODALS =====
