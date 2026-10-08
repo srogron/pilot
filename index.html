@@ -2393,7 +2393,7 @@ function exportFichePDF() {
     { key: 'todo',         label: 'À faire',        color: '#2563eb', bg: '#eff6ff' },
     { key: 'suivi',        label: 'Suivi',          color: '#7c3aed', bg: '#f5f3ff' },
     { key: 'verification', label: 'Vérification',   color: '#d97706', bg: '#fffbeb' },
-    { key: 'traitee',      label: 'Traitées',       color: '#16a34a', bg: '#f0fdf4' },
+    { key: 'traitee',      label: 'Traitées',       color: '#16a34a', bg: '#f0fdf4', pageBreak: true },
   ];
 
   const ficheTasks = data.tasks
@@ -2436,7 +2436,7 @@ function exportFichePDF() {
       </div>`;
     }).join('');
     sectionsHtml += `
-      <div class="section">
+      <div class="section${sec.pageBreak ? ' page-break' : ''}">
         <div class="section-header" style="background:${sec.bg};border-left:4px solid ${sec.color}">
           <span style="color:${sec.color};font-weight:700">${sec.label}</span>
           <span class="count">${tasks.length} tâche${tasks.length > 1 ? 's' : ''}</span>
@@ -2464,24 +2464,25 @@ function exportFichePDF() {
   .notes-block { background: #fafaf8; border: 1px solid #e5e0d8; border-radius: 6px; padding: 12px 14px; margin-bottom: 20px; }
   .notes-label { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; color: #999; margin-bottom: 6px; }
   .notes-text { font-size: 12px; color: #333; line-height: 1.5; white-space: pre-wrap; }
-  .section { margin-bottom: 18px; }
-  .section-header { display: flex; justify-content: space-between; align-items: center; padding: 7px 12px; border-radius: 4px 4px 0 0; font-size: 13px; }
-  .count { font-size: 11px; color: #666; font-weight: 500; }
+  .section { margin-bottom: 12px; }
+  .section-header { display: flex; justify-content: space-between; align-items: center; padding: 5px 10px; border-radius: 4px 4px 0 0; font-size: 12px; }
+  .count { font-size: 10px; color: #666; font-weight: 500; }
   .section-tasks { border: 1px solid #e8e8e8; border-top: none; border-radius: 0 0 4px 4px; }
-  .task { padding: 10px 14px; border-bottom: 1px solid #f0f0f0; }
+  .task { padding: 5px 10px; border-bottom: 1px solid #f0f0f0; }
   .task:last-child { border-bottom: none; }
-  .task-title { font-weight: 700; font-size: 13px; margin-bottom: 3px; }
-  .task-desc { color: #333; line-height: 1.4; margin-bottom: 5px; }
-  .task-meta { font-size: 11px; color: #888; display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
-  .badge-ec { display: inline-block; font-size: 10px; font-weight: 600; color: #166534; background: #dcfce7; border: 1px solid #86efac; border-radius: 3px; padding: 1px 5px; }
-  .badge-conf { display: inline-block; font-size: 10px; color: #666; }
-  .comments { margin-top: 7px; padding-top: 7px; border-top: 1px dashed #e8e8e8; }
-  .comment { font-size: 11px; color: #555; margin-bottom: 4px; line-height: 1.4; }
-  .cmeta { font-size: 10px; color: #aaa; margin-left: 4px; }
-  .footer { margin-top: 28px; border-top: 1px solid #e8e8e8; padding-top: 10px; font-size: 10px; color: #aaa; text-align: center; }
+  .task-title { font-weight: 700; font-size: 12px; margin-bottom: 1px; }
+  .task-desc { color: #333; font-size: 11px; line-height: 1.35; margin-bottom: 3px; }
+  .task-meta { font-size: 10px; color: #999; display: flex; gap: 6px; align-items: center; flex-wrap: wrap; }
+  .badge-ec { display: inline-block; font-size: 9px; font-weight: 600; color: #166534; background: #dcfce7; border: 1px solid #86efac; border-radius: 3px; padding: 0 4px; }
+  .badge-conf { display: inline-block; font-size: 9px; color: #888; }
+  .comments { margin-top: 4px; padding-top: 4px; border-top: 1px dashed #eee; }
+  .comment { font-size: 10px; color: #666; margin-bottom: 2px; line-height: 1.35; }
+  .cmeta { font-size: 9px; color: #bbb; margin-left: 3px; }
+  .footer { margin-top: 20px; border-top: 1px solid #e8e8e8; padding-top: 8px; font-size: 10px; color: #aaa; text-align: center; }
   @media print {
     body { padding: 0; }
     .section { page-break-inside: avoid; }
+    .page-break { page-break-before: always; }
   }
 </style>
 </head>
