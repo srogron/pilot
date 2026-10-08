@@ -1226,6 +1226,7 @@
       <div class="fiches-header">
         <h1 class="fiches-title">Tableau de bord</h1>
         <button class="btn-back" onclick="exportAllFichesPDF()" title="Exporter toutes les fiches en PDF">📄 PDF global</button>
+        <button class="btn-back" onclick="exportAllFichesPDF(true)" title="PDF global sans tâches traitées">📄 PDF actif</button>
       </div>
       <div class="dashboard-filters" id="dashboard-filters">
         <span class="filter-label">Statut :</span>
@@ -2510,7 +2511,7 @@ ${sectionsHtml}
   if (win) { win.document.write(html); win.document.close(); }
 }
 
-function exportAllFichesPDF() {
+function exportAllFichesPDF(excludeTraitees = false) {
   const sections = [
     { key: 'urgente',      label: 'Urgentes',    color: '#c0392b', bg: '#fdf2f2' },
     { key: 'todo',         label: 'À faire',      color: '#2563eb', bg: '#eff6ff' },
@@ -2529,9 +2530,10 @@ function exportAllFichesPDF() {
   const fichesHtml = visibleFiches.map((fiche, idx) => {
     const ficheTasks = data.tasks
       .filter(t => t.ficheId === fiche.id && (currentUser === 'main' || !t.confidential))
-      .map(t => ({ ...t, status: normalizeStatus(t.status) }));
+      .map(t => ({ ...t, status: normalizeStatus(t.status) }))
+      .filter(t => !excludeTraitees || t.status !== 'traitee');
 
-    const hasTasks = ficheTasks.length > 0;
+    if (excludeTraitees && ficheTasks.length === 0) return '';
 
     let sectionsHtml = '';
     sections.forEach(sec => {
@@ -2618,8 +2620,8 @@ function exportAllFichesPDF() {
 <body>
 <div class="doc-header">
   <div>
-    <h1>Pilot — Synthèse générale</h1>
-    <div style="font-size:11px;color:#666;margin-top:4px">${visibleFiches.length} fiche${visibleFiches.length>1?'s':''} client</div>
+    <h1>Pilot — ${excludeTraitees ? 'Tâches actives' : 'Synthèse générale'}</h1>
+    <div style="font-size:11px;color:#666;margin-top:4px">${visibleFiches.length} fiche${visibleFiches.length>1?'s':''} client${excludeTraitees ? ' · tâches traitées exclues' : ''}</div>
   </div>
   <div class="doc-meta">Généré le ${today}<br>Family Partners</div>
 </div>
