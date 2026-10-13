@@ -2433,7 +2433,7 @@ function exportFichePDF() {
       return `<div class="task">
         ${t.title ? `<div class="task-title">${esc(t.title)}</div>` : ''}
         <div class="task-desc">${esc(t.desc)}</div>
-        <div class="task-meta">📅 ${fmtDate(t.createdAt)} · ${esc(assignee)} ${accountantHtml} ${confHtml}</div>
+        <div class="task-meta">${fmtDate(t.createdAt)} · ${esc(assignee)} ${accountantHtml} ${confHtml}</div>
         ${commentsHtml}
       </div>`;
     }).join('');
@@ -2549,7 +2549,7 @@ function exportAllFichesPDF(excludeTraitees = false) {
         return `<div class="task">
           ${t.title ? `<div class="task-title">${esc(t.title)}</div>` : ''}
           <div class="task-desc">${esc(t.desc)}</div>
-          <div class="task-meta">📅 ${fmtDate(t.createdAt)} · ${esc(assignee)} ${accountantHtml} ${confHtml}</div>
+          <div class="task-meta">${fmtDate(t.createdAt)} · ${esc(assignee)} ${accountantHtml} ${confHtml}</div>
           ${commentsHtml}
         </div>`;
       }).join('');
