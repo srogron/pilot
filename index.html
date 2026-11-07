@@ -2227,67 +2227,66 @@ function deleteTask(taskId) {
 }
 
 // ===== AI SUMMARIES =====
+function taskLine(t, ficheName) {
+  const who = t.assignee === 'main' ? 'Stéphane' : 'Félix';
+  const prefix = ficheName ? `<strong>${escHtml(ficheName)}</strong> — ` : '';
+  const desc = escHtml(t.desc);
+  const assigneeNote = ` <span style="font-size:11px;color:var(--text-muted)">(${who})</span>`;
+  return `${prefix}${desc}${assigneeNote}`;
+}
+
+function summaryCard(label, lines) {
+  return `
+    <div class="ai-summary-card">
+      <div class="ai-summary-icon">✦</div>
+      <div class="ai-summary-content">
+        <div class="ai-summary-label">${label}</div>
+        <div class="ai-summary-text">${lines}</div>
+      </div>
+    </div>`;
+}
+
 function generateDashboardSummary() {
   const el = document.getElementById('dashboard-summary');
   if (!el) return;
 
-  const tasks = data.tasks.filter(t => {
+  const allTasks = data.tasks.filter(t => {
     if (t.confidential && currentUser !== 'main') return false;
     const fiche = data.fiches.find(f => f.id === t.ficheId);
     if (fiche && fiche.confidential && currentUser !== 'main') return false;
     return true;
-  }).map(t => ({ ...t, status: normalizeStatus(t.status) }));
+  }).map(t => ({ ...t, status: normalizeStatus(t.status) }))
+    .filter(t => t.status !== 'traitee');
 
-  if (tasks.length === 0) { el.innerHTML = ''; return; }
-
-  const counts = { urgente: 0, todo: 0, suivi: 0, verification: 0, traitee: 0 };
-  tasks.forEach(t => { if (counts[t.status] !== undefined) counts[t.status]++; });
-
-  const total = tasks.length;
-  const active = counts.urgente + counts.todo + counts.suivi + counts.verification;
-  const myTasks = tasks.filter(t => t.assignee === currentUser && t.status !== 'traitee');
-
-  // Clients avec tâches urgentes
-  const urgentFiches = [...new Set(tasks.filter(t => t.status === 'urgente').map(t => {
-    const f = data.fiches.find(f => f.id === t.ficheId);
-    return f ? f.name : null;
-  }).filter(Boolean))];
-
-  // Build sentences
-  const parts = [];
-
-  if (counts.urgente > 0) {
-    const names = urgentFiches.slice(0, 2).join(', ');
-    parts.push(`<span class="highlight-urgent">${counts.urgente} tâche${counts.urgente > 1 ? 's urgentes' : ' urgente'}${urgentFiches.length > 0 ? ' (' + names + ')' : ''}</span> nécessite${counts.urgente > 1 ? 'nt' : ''} votre attention.`);
-  } else {
-    parts.push(`<span class="highlight-ok">Aucune urgence</span> en cours.`);
+  if (allTasks.length === 0) {
+    el.innerHTML = summaryCard('Actions à réaliser', '<span class="highlight-ok">Aucune action en cours — tout est à jour.</span>');
+    return;
   }
 
-  if (counts.verification > 0) {
-    parts.push(`<span class="highlight-verif">${counts.verification} tâche${counts.verification > 1 ? 's' : ''} en vérification</span>.`);
+  const urgent = allTasks.filter(t => t.status === 'urgente');
+  const verif  = allTasks.filter(t => t.status === 'verification');
+  const todo   = allTasks.filter(t => t.status === 'todo');
+  const suivi  = allTasks.filter(t => t.status === 'suivi');
+
+  const rows = [];
+
+  if (urgent.length > 0) {
+    rows.push(`<div style="margin-bottom:10px"><div style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.07em;color:var(--urgent);margin-bottom:5px">🔴 Urgent</div><ul style="margin:0;padding-left:16px;display:flex;flex-direction:column;gap:4px">${urgent.map(t => { const f = data.fiches.find(f=>f.id===t.ficheId); return `<li>${taskLine(t, f ? f.name : null)}</li>`; }).join('')}</ul></div>`);
   }
 
-  if (myTasks.length > 0) {
-    parts.push(`Vous avez personnellement <strong>${myTasks.length} tâche${myTasks.length > 1 ? 's' : ''} active${myTasks.length > 1 ? 's' : ''}</strong>.`);
+  if (verif.length > 0) {
+    rows.push(`<div style="margin-bottom:10px"><div style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.07em;color:var(--verification);margin-bottom:5px">🔍 En vérification</div><ul style="margin:0;padding-left:16px;display:flex;flex-direction:column;gap:4px">${verif.map(t => { const f = data.fiches.find(f=>f.id===t.ficheId); return `<li>${taskLine(t, f ? f.name : null)}</li>`; }).join('')}</ul></div>`);
   }
 
-  if (counts.traitee > 0) {
-    const pct = Math.round(counts.traitee / total * 100);
-    parts.push(`${counts.traitee} tâche${counts.traitee > 1 ? 's' : ''} traitée${counts.traitee > 1 ? 's' : ''} sur ${total} au total (${pct} %).`);
+  if (todo.length > 0) {
+    rows.push(`<div style="margin-bottom:10px"><div style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.07em;color:var(--todo);margin-bottom:5px">🔵 À faire</div><ul style="margin:0;padding-left:16px;display:flex;flex-direction:column;gap:4px">${todo.map(t => { const f = data.fiches.find(f=>f.id===t.ficheId); return `<li>${taskLine(t, f ? f.name : null)}</li>`; }).join('')}</ul></div>`);
   }
 
-  if (active === 0) {
-    parts.push(`<span class="highlight-ok">Tout est traité — excellent travail !</span>`);
+  if (suivi.length > 0) {
+    rows.push(`<div><div style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.07em;color:var(--suivi);margin-bottom:5px">🟣 En suivi</div><ul style="margin:0;padding-left:16px;display:flex;flex-direction:column;gap:4px">${suivi.map(t => { const f = data.fiches.find(f=>f.id===t.ficheId); return `<li>${taskLine(t, f ? f.name : null)}</li>`; }).join('')}</ul></div>`);
   }
 
-  el.innerHTML = `
-    <div class="ai-summary-card">
-      <div class="ai-summary-icon">✦</div>
-      <div class="ai-summary-content">
-        <div class="ai-summary-label">Synthèse</div>
-        <div class="ai-summary-text">${parts.join(' ')}</div>
-      </div>
-    </div>`;
+  el.innerHTML = summaryCard('Actions à réaliser', rows.join(''));
 }
 
 function generateFicheSummary(ficheId) {
@@ -2297,42 +2296,33 @@ function generateFicheSummary(ficheId) {
   const fiche = data.fiches.find(f => f.id === ficheId);
   if (!fiche) { el.innerHTML = ''; return; }
 
-  const tasks = getTasksForFiche(ficheId);
+  const tasks = getTasksForFiche(ficheId).filter(t => t.status !== 'traitee');
   if (tasks.length === 0) { el.innerHTML = ''; return; }
 
-  const counts = { urgente: 0, todo: 0, suivi: 0, verification: 0, traitee: 0 };
-  tasks.forEach(t => { if (counts[t.status] !== undefined) counts[t.status]++; });
-  const active = counts.urgente + counts.todo + counts.suivi + counts.verification;
+  const urgent = tasks.filter(t => t.status === 'urgente');
+  const verif  = tasks.filter(t => t.status === 'verification');
+  const todo   = tasks.filter(t => t.status === 'todo');
+  const suivi  = tasks.filter(t => t.status === 'suivi');
 
-  const parts = [];
+  const rows = [];
 
-  if (counts.urgente > 0) {
-    const descs = tasks.filter(t => t.status === 'urgente').map(t => `« ${t.desc.substring(0, 40)}${t.desc.length > 40 ? '…' : ''} »`).slice(0, 2).join(', ');
-    parts.push(`<span class="highlight-urgent">${counts.urgente} point${counts.urgente > 1 ? 's urgents' : ' urgent'}</span> : ${descs}.`);
-  } else if (active > 0) {
-    parts.push(`<span class="highlight-ok">Aucune urgence</span> pour ce client.`);
+  if (urgent.length > 0) {
+    rows.push(`<div style="margin-bottom:10px"><div style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.07em;color:var(--urgent);margin-bottom:5px">🔴 Urgent</div><ul style="margin:0;padding-left:16px;display:flex;flex-direction:column;gap:4px">${urgent.map(t => `<li>${taskLine(t, null)}</li>`).join('')}</ul></div>`);
   }
 
-  if (counts.todo > 0) parts.push(`<strong>${counts.todo} tâche${counts.todo > 1 ? 's' : ''} à faire</strong>.`);
-  if (counts.suivi > 0) parts.push(`<strong>${counts.suivi} en suivi</strong>.`);
-  if (counts.verification > 0) parts.push(`<span class="highlight-verif">${counts.verification} en vérification</span>.`);
-
-  if (counts.traitee > 0 && active === 0) {
-    parts.push(`<span class="highlight-ok">Toutes les tâches sont traitées.</span>`);
-  } else if (counts.traitee > 0) {
-    parts.push(`${counts.traitee} tâche${counts.traitee > 1 ? 's' : ''} déjà traitée${counts.traitee > 1 ? 's' : ''}.`);
+  if (verif.length > 0) {
+    rows.push(`<div style="margin-bottom:10px"><div style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.07em;color:var(--verification);margin-bottom:5px">🔍 En vérification</div><ul style="margin:0;padding-left:16px;display:flex;flex-direction:column;gap:4px">${verif.map(t => `<li>${taskLine(t, null)}</li>`).join('')}</ul></div>`);
   }
 
-  if (active === 0 && counts.traitee === 0) { el.innerHTML = ''; return; }
+  if (todo.length > 0) {
+    rows.push(`<div style="margin-bottom:10px"><div style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.07em;color:var(--todo);margin-bottom:5px">🔵 À faire</div><ul style="margin:0;padding-left:16px;display:flex;flex-direction:column;gap:4px">${todo.map(t => `<li>${taskLine(t, null)}</li>`).join('')}</ul></div>`);
+  }
 
-  el.innerHTML = `
-    <div class="ai-summary-card">
-      <div class="ai-summary-icon">✦</div>
-      <div class="ai-summary-content">
-        <div class="ai-summary-label">Synthèse client</div>
-        <div class="ai-summary-text">${parts.join(' ')}</div>
-      </div>
-    </div>`;
+  if (suivi.length > 0) {
+    rows.push(`<div><div style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.07em;color:var(--suivi);margin-bottom:5px">🟣 En suivi</div><ul style="margin:0;padding-left:16px;display:flex;flex-direction:column;gap:4px">${suivi.map(t => `<li>${taskLine(t, null)}</li>`).join('')}</ul></div>`);
+  }
+
+  el.innerHTML = summaryCard('Actions à réaliser', rows.join(''));
 }
 
 // ===== DASHBOARD =====
