@@ -1261,7 +1261,6 @@
       <div class="fiches-header">
         <h1 class="fiches-title">Tableau de bord</h1>
       </div>
-      <div id="dashboard-summary" style="margin-bottom:16px"></div>
       <div class="dashboard-filters" id="dashboard-filters">
         <span class="filter-label">Statut :</span>
         <button class="filter-btn active" onclick="setFilter('status','all', this)">Tous</button>
@@ -2346,7 +2345,6 @@ function generateFicheSummary(ficheId) {
 
 // ===== DASHBOARD =====
 function renderDashboard() {
-  generateDashboardSummary();
   const grid = document.getElementById('dashboard-grid');
   let tasks = data.tasks.filter(t => {
     if (t.confidential && currentUser !== 'main') return false;
