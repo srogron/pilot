@@ -1721,16 +1721,31 @@ async function loadFromSheets() {
     });
 
     // Fusionner les commentaires locaux absents de Sheets
+    // + protéger les champs critiques effacés dans Sheets
     let hadLocalOnly = false;
     try {
       data.tasks.forEach(sheetsTask => {
         const localTask = localTasks.find(t => t.id === sheetsTask.id);
         if (!localTask) return;
+
+        // Récupérer la description si Sheets l'a perdue
+        if (!sheetsTask.desc && localTask.desc) {
+          sheetsTask.desc = localTask.desc;
+          hadLocalOnly = true;
+        }
+
+        // Fusionner les commentaires
         const sheetsDates = new Set((sheetsTask.comments || []).map(c => c.date));
         const localOnly = (localTask.comments || []).filter(c => !sheetsDates.has(c.date));
         if (localOnly.length > 0) {
           sheetsTask.comments = [...(sheetsTask.comments || []), ...localOnly]
             .sort((a, b) => new Date(a.date) - new Date(b.date));
+          hadLocalOnly = true;
+        }
+
+        // Récupérer les pièces jointes si Sheets les a perdues
+        if ((!sheetsTask.attachments || sheetsTask.attachments.length === 0) && localTask.attachments && localTask.attachments.length > 0) {
+          sheetsTask.attachments = localTask.attachments;
           hadLocalOnly = true;
         }
       });
@@ -2235,7 +2250,8 @@ function saveEditTask() {
   if (!t) return;
   const newStatus = document.getElementById('edit-task-status').value;
   const statusChanged = newStatus !== t.status;
-  t.desc = document.getElementById('edit-task-desc').value.trim();
+  const newDesc = document.getElementById('edit-task-desc').value.trim();
+  if (newDesc) t.desc = newDesc; // ne jamais écraser avec une description vide
   t.status = newStatus;
   t.assignee = document.getElementById('edit-task-assignee').value;
   if (newStatus === 'verification') t.assignee = currentUser === 'main' ? 'junior' : 'main';
