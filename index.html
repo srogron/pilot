@@ -1246,13 +1246,13 @@
           </button>
           <button class="btn-add" onclick="openNewTaskModal()">+ Tâche</button>
         </div>
-        <div id="fiche-summary"></div>
         <div class="fiche-sections" id="fiche-sections"></div>
         <div class="notes-card">
           <div class="notes-label">📝 Notes</div>
           <textarea class="notes-textarea" id="notes-textarea" placeholder="Notes libres sur ce client..." onblur="saveNotes()"></textarea>
         </div>
         <div id="fiche-traitee-section"></div>
+        <div id="fiche-summary"></div>
       </div>
     </div>
 
@@ -1333,8 +1333,15 @@
       <textarea class="form-textarea form-textarea--comment" id="new-task-comment" placeholder="Commentaire (optionnel)..."></textarea>
     </div>
     <div class="form-group">
+      <div class="form-label" style="margin-bottom:8px">Intervention Family Partners</div>
+      <label class="form-checkbox" style="margin-bottom:6px">
+        <input type="checkbox" id="new-task-fp-fiduciaire"> FP FIDUCIAIRE
+      </label>
+      <label class="form-checkbox" style="margin-bottom:6px">
+        <input type="checkbox" id="new-task-fp-signature"> FP SIGNATURE
+      </label>
       <label class="form-checkbox">
-        <input type="checkbox" id="new-task-expert"> À réaliser avec l'expert comptable
+        <input type="checkbox" id="new-task-fp-juridique"> FP JURIDIQUE
       </label>
     </div>
     <div class="form-group">
@@ -1383,8 +1390,15 @@
       <textarea class="form-textarea form-textarea--comment" id="edit-task-comment" placeholder="Ajouter un commentaire..."></textarea>
     </div>
     <div class="form-group">
+      <div class="form-label" style="margin-bottom:8px">Intervention Family Partners</div>
+      <label class="form-checkbox" style="margin-bottom:6px">
+        <input type="checkbox" id="edit-task-fp-fiduciaire"> FP FIDUCIAIRE
+      </label>
+      <label class="form-checkbox" style="margin-bottom:6px">
+        <input type="checkbox" id="edit-task-fp-signature"> FP SIGNATURE
+      </label>
       <label class="form-checkbox">
-        <input type="checkbox" id="edit-task-expert"> À réaliser avec l'expert comptable
+        <input type="checkbox" id="edit-task-fp-juridique"> FP JURIDIQUE
       </label>
     </div>
     <div class="form-group">
@@ -1988,7 +2002,9 @@ function renderTaskItem(t) {
       <div class="task-meta">
         <span class="task-date">📅 ${formatDate(t.createdAt)}</span>
         <span class="task-assignee">${assigneeLabel}</span>
-        ${t.withExpert ? '<span class="task-confidential-icon" title="À réaliser avec l\'expert comptable">🧮 EC</span>' : ''}
+        ${t.fpFiduciaire ? '<span class="task-confidential-icon" title="FP Fiduciaire" style="color:var(--todo)">FP FID.</span>' : ''}
+        ${t.fpSignature ? '<span class="task-confidential-icon" title="FP Signature" style="color:var(--suivi)">FP SIG.</span>' : ''}
+        ${t.fpJuridique ? '<span class="task-confidential-icon" title="FP Juridique" style="color:var(--urgent)">FP JUR.</span>' : ''}
         ${t.confidential ? '<span class="task-confidential-icon">🔒</span>' : ''}
         ${statusHistory.length > 0 ? `<span class="task-date" style="color:var(--text-muted);font-style:italic">Modifié ${formatDateTime(statusHistory[statusHistory.length-1].date)}</span>` : ''}
       </div>
@@ -2144,7 +2160,9 @@ function openNewTaskModal(status) {
   document.getElementById('new-task-assignee').value = 'main';
   document.getElementById('new-task-comment').value = '';
   document.getElementById('new-task-conf').checked = false;
-  document.getElementById('new-task-expert').checked = false;
+  document.getElementById('new-task-fp-fiduciaire').checked = false;
+  document.getElementById('new-task-fp-signature').checked = false;
+  document.getElementById('new-task-fp-juridique').checked = false;
   document.getElementById('modal-new-task').style.display = 'flex';
   setTimeout(() => document.getElementById('new-task-desc').focus(), 100);
 }
@@ -2160,7 +2178,9 @@ function createTask() {
     status: initialStatus,
     assignee: document.getElementById('new-task-assignee').value,
     confidential: document.getElementById('new-task-conf').checked,
-    withExpert: document.getElementById('new-task-expert').checked,
+    fpFiduciaire: document.getElementById('new-task-fp-fiduciaire').checked,
+    fpSignature: document.getElementById('new-task-fp-signature').checked,
+    fpJuridique: document.getElementById('new-task-fp-juridique').checked,
     createdAt: now(),
     comments: [],
     statusHistory: [{ status: initialStatus, date: now(), user: currentUser }]
@@ -2182,7 +2202,9 @@ function openEditTask(taskId) {
   document.getElementById('edit-task-assignee').value = t.assignee;
   document.getElementById('edit-task-comment').value = '';
   document.getElementById('edit-task-conf').checked = !!t.confidential;
-  document.getElementById('edit-task-expert').checked = !!t.withExpert;
+  document.getElementById('edit-task-fp-fiduciaire').checked = !!t.fpFiduciaire;
+  document.getElementById('edit-task-fp-signature').checked = !!t.fpSignature;
+  document.getElementById('edit-task-fp-juridique').checked = !!t.fpJuridique;
 
   const comments = t.comments && t.comments.length > 0 ? [...t.comments].reverse() : [];
   const section = document.getElementById('edit-task-comments-section');
@@ -2217,7 +2239,9 @@ function saveEditTask() {
   t.assignee = document.getElementById('edit-task-assignee').value;
   if (newStatus === 'verification') t.assignee = currentUser === 'main' ? 'junior' : 'main';
   t.confidential = document.getElementById('edit-task-conf').checked;
-  t.withExpert = document.getElementById('edit-task-expert').checked;
+  t.fpFiduciaire = document.getElementById('edit-task-fp-fiduciaire').checked;
+  t.fpSignature = document.getElementById('edit-task-fp-signature').checked;
+  t.fpJuridique = document.getElementById('edit-task-fp-juridique').checked;
   if (statusChanged) {
     if (!t.statusHistory) t.statusHistory = [];
     t.statusHistory.push({ status: newStatus, date: now(), user: currentUser });
