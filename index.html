@@ -1455,6 +1455,7 @@ let dashboardFilters = { status: 'all', assignee: 'all' };
 let syncInterval = null;
 let sheetId = "https://script.google.com/macros/s/AKfycbwGar3a6g0RcPnPL7bCtlwQYL22dCI5TIdwoMiuCS4hK48kLpWmTXWRJzMtHQRwBrHN_w/exec";
 let useSheets = true;
+let recoveryMode = new URLSearchParams(window.location.search).get('recovery') === '1';
 
 // Authorized users: email -> role ('main' or 'junior')
 const AUTHORIZED_USERS = {
@@ -2014,7 +2015,7 @@ function renderTaskItem(t) {
   return `
     <div class="task-item" id="task-${t.id}">
       <div class="task-item-header">
-        <div class="task-desc">${escHtml(t.desc)}</div>
+        <div class="task-desc">${escHtml(t.title || t.desc)}</div>
         <div class="task-actions">
           ${hasHistory ? `<button class="task-action-btn" onclick="toggleHistory('${t.id}')" title="Historique">🕐</button>` : ''}
           ${t.assignee === currentUser && t.status !== 'verification' && t.status !== 'traitee' ? `<button class="task-action-btn" onclick="sendToVerification('${t.id}')" title="Envoyer en vérification" style="color:var(--verification)">🔍</button>` : ''}
@@ -2197,6 +2198,7 @@ function createTask() {
   const task = {
     id: uid(),
     ficheId: currentFicheId,
+    title: desc,
     desc,
     status: initialStatus,
     assignee: document.getElementById('new-task-assignee').value,
@@ -2220,7 +2222,7 @@ function openEditTask(taskId) {
   const t = data.tasks.find(x => x.id === taskId);
   if (!t) return;
   document.getElementById('edit-task-id').value = taskId;
-  document.getElementById('edit-task-desc').value = t.desc;
+  document.getElementById('edit-task-desc').value = t.title || t.desc;
   document.getElementById('edit-task-status').value = normalizeStatus(t.status);
   document.getElementById('edit-task-assignee').value = t.assignee;
   document.getElementById('edit-task-comment').value = '';
@@ -2258,7 +2260,7 @@ function saveEditTask() {
   const newStatus = document.getElementById('edit-task-status').value;
   const statusChanged = newStatus !== t.status;
   const newDesc = document.getElementById('edit-task-desc').value.trim();
-  if (newDesc) t.desc = newDesc; // ne jamais écraser avec une description vide
+  if (newDesc) { t.title = newDesc; t.desc = newDesc; }
   t.status = newStatus;
   t.assignee = document.getElementById('edit-task-assignee').value;
   if (newStatus === 'verification') t.assignee = currentUser === 'main' ? 'junior' : 'main';
@@ -2292,7 +2294,7 @@ function deleteTask(taskId) {
 function taskLine(t, ficheName) {
   const who = t.assignee === 'main' ? 'Stéphane' : 'Félix';
   const prefix = ficheName ? `<strong>${escHtml(ficheName)}</strong> — ` : '';
-  const desc = escHtml(t.desc);
+  const desc = escHtml(t.title || t.desc);
   const assigneeNote = ` <span style="font-size:11px;color:var(--text-muted)">(${who})</span>`;
   return `${prefix}${desc}${assigneeNote}`;
 }
@@ -2352,7 +2354,7 @@ function generateDashboardSummary() {
 }
 
 function joinDescs(tasks) {
-  const descs = tasks.map(t => `<em>${escHtml(t.desc)}</em>`);
+  const descs = tasks.map(t => `<em>${escHtml(t.title || t.desc)}</em>`);
   if (descs.length === 1) return descs[0];
   const last = descs.pop();
   return descs.join(', ') + ' et ' + last;
@@ -2438,7 +2440,7 @@ function renderDashboard() {
           <span class="dash-task-client">${fiche ? fiche.name : 'Autre'}</span>
           <span class="badge ${badgeClass}">${badgeLabel}</span>
         </div>
-        <div class="dash-task-desc">${escHtml(t.desc)}</div>
+        <div class="dash-task-desc">${escHtml(t.title || t.desc)}</div>
         <div class="dash-task-meta">
           <span class="task-date">📅 ${formatDate(t.createdAt)}</span>
           <span class="task-assignee">${t.assignee === 'main' ? 'Stéphane' : 'Félix'}</span>
