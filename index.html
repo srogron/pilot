@@ -2289,6 +2289,13 @@ function generateDashboardSummary() {
   el.innerHTML = summaryCard('Actions à réaliser', rows.join(''));
 }
 
+function joinDescs(tasks) {
+  const descs = tasks.map(t => `<em>${escHtml(t.desc)}</em>`);
+  if (descs.length === 1) return descs[0];
+  const last = descs.pop();
+  return descs.join(', ') + ' et ' + last;
+}
+
 function generateFicheSummary(ficheId) {
   const el = document.getElementById('fiche-summary');
   if (!el) return;
@@ -2304,25 +2311,37 @@ function generateFicheSummary(ficheId) {
   const todo   = tasks.filter(t => t.status === 'todo');
   const suivi  = tasks.filter(t => t.status === 'suivi');
 
-  const rows = [];
+  const sentences = [];
 
-  if (urgent.length > 0) {
-    rows.push(`<div style="margin-bottom:10px"><div style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.07em;color:var(--urgent);margin-bottom:5px">🔴 Urgent</div><ul style="margin:0;padding-left:16px;display:flex;flex-direction:column;gap:4px">${urgent.map(t => `<li>${taskLine(t, null)}</li>`).join('')}</ul></div>`);
+  if (urgent.length === 1) {
+    sentences.push(`Action urgente à traiter immédiatement : <span class="highlight-urgent">${escHtml(urgent[0].desc)}</span>.`);
+  } else if (urgent.length > 1) {
+    sentences.push(`<span class="highlight-urgent">${urgent.length} actions urgentes</span> à traiter : ${joinDescs(urgent)}.`);
   }
 
-  if (verif.length > 0) {
-    rows.push(`<div style="margin-bottom:10px"><div style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.07em;color:var(--verification);margin-bottom:5px">🔍 En vérification</div><ul style="margin:0;padding-left:16px;display:flex;flex-direction:column;gap:4px">${verif.map(t => `<li>${taskLine(t, null)}</li>`).join('')}</ul></div>`);
+  if (verif.length === 1) {
+    sentences.push(`En attente de vérification : <span class="highlight-verif">${escHtml(verif[0].desc)}</span>.`);
+  } else if (verif.length > 1) {
+    sentences.push(`<span class="highlight-verif">${verif.length} points en vérification</span> : ${joinDescs(verif)}.`);
   }
 
-  if (todo.length > 0) {
-    rows.push(`<div style="margin-bottom:10px"><div style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.07em;color:var(--todo);margin-bottom:5px">🔵 À faire</div><ul style="margin:0;padding-left:16px;display:flex;flex-direction:column;gap:4px">${todo.map(t => `<li>${taskLine(t, null)}</li>`).join('')}</ul></div>`);
+  if (todo.length === 1) {
+    sentences.push(`À planifier : ${joinDescs(todo)}.`);
+  } else if (todo.length > 1) {
+    sentences.push(`À planifier prochainement : ${joinDescs(todo)}.`);
   }
 
-  if (suivi.length > 0) {
-    rows.push(`<div><div style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.07em;color:var(--suivi);margin-bottom:5px">🟣 En suivi</div><ul style="margin:0;padding-left:16px;display:flex;flex-direction:column;gap:4px">${suivi.map(t => `<li>${taskLine(t, null)}</li>`).join('')}</ul></div>`);
+  if (suivi.length === 1) {
+    sentences.push(`En cours de suivi : ${joinDescs(suivi)}.`);
+  } else if (suivi.length > 1) {
+    sentences.push(`${suivi.length} points en suivi : ${joinDescs(suivi)}.`);
   }
 
-  el.innerHTML = summaryCard('Actions à réaliser', rows.join(''));
+  if (urgent.length === 0 && sentences.length > 0) {
+    sentences.unshift(`<span class="highlight-ok">Aucune urgence</span> pour ce dossier.`);
+  }
+
+  el.innerHTML = summaryCard('Recommandation', `<p style="line-height:1.75">${sentences.join(' ')}</p>`);
 }
 
 // ===== DASHBOARD =====
