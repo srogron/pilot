@@ -1631,6 +1631,7 @@ function migrateData() {
     if (t.statusHistory) t.statusHistory.forEach(h => {
       if (h.status === 'prioritaire') { h.status = 'urgente'; changed = true; }
     });
+    if (t.withExpert && !t.fpFiduciaire) { t.fpFiduciaire = true; delete t.withExpert; changed = true; }
   });
   if (changed) saveLocal();
 }
