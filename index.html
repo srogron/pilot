@@ -1758,6 +1758,13 @@ async function loadFromSheets() {
 
 async function writeToSheets() {
   if (!useSheets) return;
+  // Sécurité : bloquer l'écriture si trop de tâches ont une description vide
+  const tasksWithDesc = data.tasks.filter(t => t.desc && t.desc.trim()).length;
+  const totalTasks = data.tasks.length;
+  if (totalTasks > 5 && tasksWithDesc < totalTasks * 0.5) {
+    showSyncStatus('error', '⚠ Écriture bloquée : données incomplètes');
+    return;
+  }
   try {
     const res = await fetch(sheetId, {
       method: 'POST',
