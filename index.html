@@ -1308,6 +1308,10 @@
   <div class="modal" onclick="event.stopPropagation()">
     <div class="modal-title">Nouvelle tâche</div>
     <div class="form-group">
+      <label class="form-label">Titre</label>
+      <input class="form-input" id="new-task-title" placeholder="Titre de la tâche...">
+    </div>
+    <div class="form-group">
       <label class="form-label">Description</label>
       <textarea class="form-textarea" id="new-task-desc" placeholder="Description de la tâche..."></textarea>
     </div>
@@ -1361,6 +1365,10 @@
   <div class="modal" onclick="event.stopPropagation()">
     <div class="modal-title">Modifier la tâche</div>
     <input type="hidden" id="edit-task-id">
+    <div class="form-group">
+      <label class="form-label">Titre</label>
+      <input class="form-input" id="edit-task-title" placeholder="Titre de la tâche...">
+    </div>
     <div class="form-group">
       <label class="form-label">Description</label>
       <textarea class="form-textarea" id="edit-task-desc"></textarea>
@@ -2179,6 +2187,7 @@ let newTaskDefaultStatus = 'todo';
 
 function openNewTaskModal(status) {
   newTaskDefaultStatus = status || 'todo';
+  document.getElementById('new-task-title').value = '';
   document.getElementById('new-task-desc').value = '';
   document.getElementById('new-task-status').value = newTaskDefaultStatus;
   document.getElementById('new-task-assignee').value = 'main';
@@ -2188,17 +2197,18 @@ function openNewTaskModal(status) {
   document.getElementById('new-task-fp-signature').checked = false;
   document.getElementById('new-task-fp-juridique').checked = false;
   document.getElementById('modal-new-task').style.display = 'flex';
-  setTimeout(() => document.getElementById('new-task-desc').focus(), 100);
+  setTimeout(() => document.getElementById('new-task-title').focus(), 100);
 }
 
 function createTask() {
+  const title = document.getElementById('new-task-title').value.trim();
   const desc = document.getElementById('new-task-desc').value.trim();
-  if (!desc) return;
+  if (!title && !desc) return;
   const initialStatus = document.getElementById('new-task-status').value;
   const task = {
     id: uid(),
     ficheId: currentFicheId,
-    title: desc,
+    title: title || desc,
     desc,
     status: initialStatus,
     assignee: document.getElementById('new-task-assignee').value,
@@ -2222,7 +2232,8 @@ function openEditTask(taskId) {
   const t = data.tasks.find(x => x.id === taskId);
   if (!t) return;
   document.getElementById('edit-task-id').value = taskId;
-  document.getElementById('edit-task-desc').value = t.title || t.desc;
+  document.getElementById('edit-task-title').value = t.title || '';
+  document.getElementById('edit-task-desc').value = t.desc || '';
   document.getElementById('edit-task-status').value = normalizeStatus(t.status);
   document.getElementById('edit-task-assignee').value = t.assignee;
   document.getElementById('edit-task-comment').value = '';
@@ -2250,7 +2261,7 @@ function openEditTask(taskId) {
   renderModalAttachments(taskId);
   initAttachmentDrop();
   document.getElementById('modal-edit-task').style.display = 'flex';
-  setTimeout(() => document.getElementById('edit-task-desc').focus(), 100);
+  setTimeout(() => document.getElementById('edit-task-title').focus(), 100);
 }
 
 function saveEditTask() {
@@ -2259,8 +2270,10 @@ function saveEditTask() {
   if (!t) return;
   const newStatus = document.getElementById('edit-task-status').value;
   const statusChanged = newStatus !== t.status;
+  const newTitle = document.getElementById('edit-task-title').value.trim();
   const newDesc = document.getElementById('edit-task-desc').value.trim();
-  if (newDesc) { t.title = newDesc; t.desc = newDesc; }
+  if (newTitle) t.title = newTitle;
+  if (newDesc) t.desc = newDesc;
   t.status = newStatus;
   t.assignee = document.getElementById('edit-task-assignee').value;
   if (newStatus === 'verification') t.assignee = currentUser === 'main' ? 'junior' : 'main';
