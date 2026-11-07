@@ -1642,7 +1642,7 @@ function migrateData() {
     });
     if (t.withExpert && !t.fpFiduciaire) { t.fpFiduciaire = true; delete t.withExpert; changed = true; }
   });
-  if (changed) saveLocal();
+  if (changed) { saveLocal(); writeToSheets(); }
 }
 
 async function loadData() {
@@ -1666,6 +1666,7 @@ async function syncNow() {
   if (useSheets) {
     try {
       await loadFromSheets();
+      migrateData();
       showSyncStatus('success', '✓ Synchronisé');
     } catch(e) {
       showSyncStatus('error', '⚠ Erreur de synchronisation');
