@@ -1334,6 +1334,11 @@
     </div>
     <div class="form-group">
       <label class="form-checkbox">
+        <input type="checkbox" id="new-task-expert"> À réaliser avec l'expert comptable
+      </label>
+    </div>
+    <div class="form-group">
+      <label class="form-checkbox">
         <input type="checkbox" id="new-task-conf"> Tâche confidentielle
       </label>
     </div>
@@ -1376,6 +1381,11 @@
     <div class="form-group">
       <label class="form-label">Commentaire (horodaté automatiquement)</label>
       <textarea class="form-textarea form-textarea--comment" id="edit-task-comment" placeholder="Ajouter un commentaire..."></textarea>
+    </div>
+    <div class="form-group">
+      <label class="form-checkbox">
+        <input type="checkbox" id="edit-task-expert"> À réaliser avec l'expert comptable
+      </label>
     </div>
     <div class="form-group">
       <label class="form-checkbox">
@@ -1978,6 +1988,7 @@ function renderTaskItem(t) {
       <div class="task-meta">
         <span class="task-date">📅 ${formatDate(t.createdAt)}</span>
         <span class="task-assignee">${assigneeLabel}</span>
+        ${t.withExpert ? '<span class="task-confidential-icon" title="À réaliser avec l\'expert comptable">🧮 EC</span>' : ''}
         ${t.confidential ? '<span class="task-confidential-icon">🔒</span>' : ''}
         ${statusHistory.length > 0 ? `<span class="task-date" style="color:var(--text-muted);font-style:italic">Modifié ${formatDateTime(statusHistory[statusHistory.length-1].date)}</span>` : ''}
       </div>
@@ -2133,6 +2144,7 @@ function openNewTaskModal(status) {
   document.getElementById('new-task-assignee').value = 'main';
   document.getElementById('new-task-comment').value = '';
   document.getElementById('new-task-conf').checked = false;
+  document.getElementById('new-task-expert').checked = false;
   document.getElementById('modal-new-task').style.display = 'flex';
   setTimeout(() => document.getElementById('new-task-desc').focus(), 100);
 }
@@ -2148,6 +2160,7 @@ function createTask() {
     status: initialStatus,
     assignee: document.getElementById('new-task-assignee').value,
     confidential: document.getElementById('new-task-conf').checked,
+    withExpert: document.getElementById('new-task-expert').checked,
     createdAt: now(),
     comments: [],
     statusHistory: [{ status: initialStatus, date: now(), user: currentUser }]
@@ -2169,6 +2182,7 @@ function openEditTask(taskId) {
   document.getElementById('edit-task-assignee').value = t.assignee;
   document.getElementById('edit-task-comment').value = '';
   document.getElementById('edit-task-conf').checked = !!t.confidential;
+  document.getElementById('edit-task-expert').checked = !!t.withExpert;
 
   const comments = t.comments && t.comments.length > 0 ? [...t.comments].reverse() : [];
   const section = document.getElementById('edit-task-comments-section');
@@ -2203,6 +2217,7 @@ function saveEditTask() {
   t.assignee = document.getElementById('edit-task-assignee').value;
   if (newStatus === 'verification') t.assignee = currentUser === 'main' ? 'junior' : 'main';
   t.confidential = document.getElementById('edit-task-conf').checked;
+  t.withExpert = document.getElementById('edit-task-expert').checked;
   if (statusChanged) {
     if (!t.statusHistory) t.statusHistory = [];
     t.statusHistory.push({ status: newStatus, date: now(), user: currentUser });
