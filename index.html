@@ -2023,7 +2023,7 @@ function renderTaskItem(t) {
   return `
     <div class="task-item" id="task-${t.id}">
       <div class="task-item-header">
-        <div class="task-desc">${escHtml(t.title || t.desc)}</div>
+        <div class="task-desc">${escHtml(t.title || t.desc)}${t.desc && t.title && t.desc !== t.title ? `<div style="font-size:12px;color:var(--text-muted);font-weight:300;margin-top:3px">${escHtml(t.desc)}</div>` : ''}</div>
         <div class="task-actions">
           ${hasHistory ? `<button class="task-action-btn" onclick="toggleHistory('${t.id}')" title="Historique">🕐</button>` : ''}
           ${t.assignee === currentUser && t.status !== 'verification' && t.status !== 'traitee' ? `<button class="task-action-btn" onclick="sendToVerification('${t.id}')" title="Envoyer en vérification" style="color:var(--verification)">🔍</button>` : ''}
@@ -2232,7 +2232,7 @@ function openEditTask(taskId) {
   const t = data.tasks.find(x => x.id === taskId);
   if (!t) return;
   document.getElementById('edit-task-id').value = taskId;
-  document.getElementById('edit-task-title').value = t.title || '';
+  document.getElementById('edit-task-title').value = t.title || t.desc || '';
   document.getElementById('edit-task-desc').value = t.desc || '';
   document.getElementById('edit-task-status').value = normalizeStatus(t.status);
   document.getElementById('edit-task-assignee').value = t.assignee;
