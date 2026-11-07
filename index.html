@@ -741,6 +741,48 @@
   .badge-suivi { background: var(--suivi-bg); color: var(--suivi); }
   .badge-traitee { background: var(--traitee-bg); color: var(--traitee); }
   .badge-verification { background: var(--verification-bg); color: var(--verification); }
+  /* ===== AI SUMMARY CARD ===== */
+  .ai-summary-card {
+    background: linear-gradient(135deg, #FDFCFA 0%, #F0EDE8 100%);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 16px 20px;
+    margin-bottom: 0;
+    display: flex;
+    gap: 14px;
+    align-items: flex-start;
+  }
+  .ai-summary-icon {
+    font-size: 20px;
+    flex-shrink: 0;
+    margin-top: 1px;
+    opacity: 0.85;
+  }
+  .ai-summary-content {
+    flex: 1;
+  }
+  .ai-summary-label {
+    font-size: 10px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: var(--text-muted);
+    margin-bottom: 6px;
+  }
+  .ai-summary-text {
+    font-size: 13.5px;
+    line-height: 1.65;
+    color: var(--text);
+    font-weight: 300;
+  }
+  .ai-summary-text strong {
+    font-weight: 600;
+    color: var(--text);
+  }
+  .ai-summary-text .highlight-urgent { color: var(--urgent); font-weight: 600; }
+  .ai-summary-text .highlight-ok { color: var(--traitee); font-weight: 600; }
+  .ai-summary-text .highlight-verif { color: var(--verification); font-weight: 600; }
+
   /* Notes section */
   .notes-card {
     background: var(--surface);
@@ -1204,6 +1246,7 @@
           </button>
           <button class="btn-add" onclick="openNewTaskModal()">+ Tâche</button>
         </div>
+        <div id="fiche-summary"></div>
         <div class="fiche-sections" id="fiche-sections"></div>
         <div class="notes-card">
           <div class="notes-label">📝 Notes</div>
@@ -1218,6 +1261,7 @@
       <div class="fiches-header">
         <h1 class="fiches-title">Tableau de bord</h1>
       </div>
+      <div id="dashboard-summary" style="margin-bottom:16px"></div>
       <div class="dashboard-filters" id="dashboard-filters">
         <span class="filter-label">Statut :</span>
         <button class="filter-btn active" onclick="setFilter('status','all', this)">Tous</button>
@@ -1854,6 +1898,7 @@ function renderFicheDetail(ficheId) {
   toggle.classList.toggle('active', !!fiche.confidential);
   if (currentUser !== 'main') toggle.style.display = 'none';
   document.getElementById('notes-textarea').value = fiche.notes || '';
+  generateFicheSummary(ficheId);
 
   const sections = [
     { key: 'urgente', label: 'Urgentes', cls: 'section-urgente' },
@@ -2181,8 +2226,118 @@ function deleteTask(taskId) {
   renderFicheDetail(currentFicheId);
 }
 
+// ===== AI SUMMARIES =====
+function generateDashboardSummary() {
+  const el = document.getElementById('dashboard-summary');
+  if (!el) return;
+
+  const tasks = data.tasks.filter(t => {
+    if (t.confidential && currentUser !== 'main') return false;
+    const fiche = data.fiches.find(f => f.id === t.ficheId);
+    if (fiche && fiche.confidential && currentUser !== 'main') return false;
+    return true;
+  }).map(t => ({ ...t, status: normalizeStatus(t.status) }));
+
+  if (tasks.length === 0) { el.innerHTML = ''; return; }
+
+  const counts = { urgente: 0, todo: 0, suivi: 0, verification: 0, traitee: 0 };
+  tasks.forEach(t => { if (counts[t.status] !== undefined) counts[t.status]++; });
+
+  const total = tasks.length;
+  const active = counts.urgente + counts.todo + counts.suivi + counts.verification;
+  const myTasks = tasks.filter(t => t.assignee === currentUser && t.status !== 'traitee');
+
+  // Clients avec tâches urgentes
+  const urgentFiches = [...new Set(tasks.filter(t => t.status === 'urgente').map(t => {
+    const f = data.fiches.find(f => f.id === t.ficheId);
+    return f ? f.name : null;
+  }).filter(Boolean))];
+
+  // Build sentences
+  const parts = [];
+
+  if (counts.urgente > 0) {
+    const names = urgentFiches.slice(0, 2).join(', ');
+    parts.push(`<span class="highlight-urgent">${counts.urgente} tâche${counts.urgente > 1 ? 's urgentes' : ' urgente'}${urgentFiches.length > 0 ? ' (' + names + ')' : ''}</span> nécessite${counts.urgente > 1 ? 'nt' : ''} votre attention.`);
+  } else {
+    parts.push(`<span class="highlight-ok">Aucune urgence</span> en cours.`);
+  }
+
+  if (counts.verification > 0) {
+    parts.push(`<span class="highlight-verif">${counts.verification} tâche${counts.verification > 1 ? 's' : ''} en vérification</span>.`);
+  }
+
+  if (myTasks.length > 0) {
+    parts.push(`Vous avez personnellement <strong>${myTasks.length} tâche${myTasks.length > 1 ? 's' : ''} active${myTasks.length > 1 ? 's' : ''}</strong>.`);
+  }
+
+  if (counts.traitee > 0) {
+    const pct = Math.round(counts.traitee / total * 100);
+    parts.push(`${counts.traitee} tâche${counts.traitee > 1 ? 's' : ''} traitée${counts.traitee > 1 ? 's' : ''} sur ${total} au total (${pct} %).`);
+  }
+
+  if (active === 0) {
+    parts.push(`<span class="highlight-ok">Tout est traité — excellent travail !</span>`);
+  }
+
+  el.innerHTML = `
+    <div class="ai-summary-card">
+      <div class="ai-summary-icon">✦</div>
+      <div class="ai-summary-content">
+        <div class="ai-summary-label">Synthèse</div>
+        <div class="ai-summary-text">${parts.join(' ')}</div>
+      </div>
+    </div>`;
+}
+
+function generateFicheSummary(ficheId) {
+  const el = document.getElementById('fiche-summary');
+  if (!el) return;
+
+  const fiche = data.fiches.find(f => f.id === ficheId);
+  if (!fiche) { el.innerHTML = ''; return; }
+
+  const tasks = getTasksForFiche(ficheId);
+  if (tasks.length === 0) { el.innerHTML = ''; return; }
+
+  const counts = { urgente: 0, todo: 0, suivi: 0, verification: 0, traitee: 0 };
+  tasks.forEach(t => { if (counts[t.status] !== undefined) counts[t.status]++; });
+  const active = counts.urgente + counts.todo + counts.suivi + counts.verification;
+
+  const parts = [];
+
+  if (counts.urgente > 0) {
+    const descs = tasks.filter(t => t.status === 'urgente').map(t => `« ${t.desc.substring(0, 40)}${t.desc.length > 40 ? '…' : ''} »`).slice(0, 2).join(', ');
+    parts.push(`<span class="highlight-urgent">${counts.urgente} point${counts.urgente > 1 ? 's urgents' : ' urgent'}</span> : ${descs}.`);
+  } else if (active > 0) {
+    parts.push(`<span class="highlight-ok">Aucune urgence</span> pour ce client.`);
+  }
+
+  if (counts.todo > 0) parts.push(`<strong>${counts.todo} tâche${counts.todo > 1 ? 's' : ''} à faire</strong>.`);
+  if (counts.suivi > 0) parts.push(`<strong>${counts.suivi} en suivi</strong>.`);
+  if (counts.verification > 0) parts.push(`<span class="highlight-verif">${counts.verification} en vérification</span>.`);
+
+  if (counts.traitee > 0 && active === 0) {
+    parts.push(`<span class="highlight-ok">Toutes les tâches sont traitées.</span>`);
+  } else if (counts.traitee > 0) {
+    parts.push(`${counts.traitee} tâche${counts.traitee > 1 ? 's' : ''} déjà traitée${counts.traitee > 1 ? 's' : ''}.`);
+  }
+
+  if (active === 0 && counts.traitee === 0) { el.innerHTML = ''; return; }
+
+  el.innerHTML = `
+    <div class="ai-summary-card">
+      <div class="ai-summary-icon">✦</div>
+      <div class="ai-summary-content">
+        <div class="ai-summary-label">Synthèse client</div>
+        <div class="ai-summary-text">${parts.join(' ')}</div>
+      </div>
+    </div>`;
+}
+
 // ===== DASHBOARD =====
 function renderDashboard() {
+  generateDashboardSummary();
   const grid = document.getElementById('dashboard-grid');
   let tasks = data.tasks.filter(t => {
     if (t.confidential && currentUser !== 'main') return false;
