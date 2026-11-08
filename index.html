@@ -2035,9 +2035,9 @@ function renderTaskItem(t) {
       <div class="task-meta">
         <span class="task-date">📅 ${formatDate(t.createdAt)}</span>
         <span class="task-assignee">${assigneeLabel}</span>
-        ${t.fpFiduciaire ? '<span class="task-confidential-icon" title="FP Fiduciaire" style="color:var(--todo)">FP FID.</span>' : ''}
-        ${t.fpSignature ? '<span class="task-confidential-icon" title="FP Signature" style="color:var(--suivi)">FP SIG.</span>' : ''}
-        ${t.fpJuridique ? '<span class="task-confidential-icon" title="FP Juridique" style="color:var(--urgent)">FP JUR.</span>' : ''}
+        ${t.fpFiduciaire ? '<span class="task-confidential-icon" style="color:var(--todo)">FP FIDUCIAIRE</span>' : ''}
+        ${t.fpSignature ? '<span class="task-confidential-icon" style="color:var(--suivi)">FP SIGNATURE</span>' : ''}
+        ${t.fpJuridique ? '<span class="task-confidential-icon" style="color:var(--urgent)">FP JURIDIQUE</span>' : ''}
         ${t.confidential ? '<span class="task-confidential-icon">🔒</span>' : ''}
         ${statusHistory.length > 0 ? `<span class="task-date" style="color:var(--text-muted);font-style:italic">Modifié ${formatDateTime(statusHistory[statusHistory.length-1].date)}</span>` : ''}
       </div>
@@ -2458,9 +2458,9 @@ function renderDashboard() {
         <div class="dash-task-meta">
           <span class="task-date">📅 ${formatDate(t.createdAt)}</span>
           <span class="task-assignee">${t.assignee === 'main' ? 'Stéphane' : 'Félix'}</span>
-          ${t.fpFiduciaire ? '<span class="task-confidential-icon" style="color:var(--todo)">FP FID.</span>' : ''}
-          ${t.fpSignature ? '<span class="task-confidential-icon" style="color:var(--suivi)">FP SIG.</span>' : ''}
-          ${t.fpJuridique ? '<span class="task-confidential-icon" style="color:var(--urgent)">FP JUR.</span>' : ''}
+          ${t.fpFiduciaire ? '<span class="task-confidential-icon" style="color:var(--todo)">FP FIDUCIAIRE</span>' : ''}
+          ${t.fpSignature ? '<span class="task-confidential-icon" style="color:var(--suivi)">FP SIGNATURE</span>' : ''}
+          ${t.fpJuridique ? '<span class="task-confidential-icon" style="color:var(--urgent)">FP JURIDIQUE</span>' : ''}
           ${t.confidential ? '<span style="font-size:11px">🔒</span>' : ''}
         </div>
       </div>`;
