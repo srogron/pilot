@@ -2458,6 +2458,9 @@ function renderDashboard() {
         <div class="dash-task-meta">
           <span class="task-date">📅 ${formatDate(t.createdAt)}</span>
           <span class="task-assignee">${t.assignee === 'main' ? 'Stéphane' : 'Félix'}</span>
+          ${t.fpFiduciaire ? '<span class="task-confidential-icon" style="color:var(--todo)">FP FID.</span>' : ''}
+          ${t.fpSignature ? '<span class="task-confidential-icon" style="color:var(--suivi)">FP SIG.</span>' : ''}
+          ${t.fpJuridique ? '<span class="task-confidential-icon" style="color:var(--urgent)">FP JUR.</span>' : ''}
           ${t.confidential ? '<span style="font-size:11px">🔒</span>' : ''}
         </div>
       </div>`;
