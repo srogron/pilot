@@ -1132,6 +1132,55 @@
     border-radius: 10px;
   }
   .task-attachment-link:hover { text-decoration: underline; }
+
+  /* ===== EXPORT BUTTON ===== */
+  .btn-export {
+    padding: 6px 14px;
+    border: 1px solid var(--border);
+    background: var(--surface);
+    color: var(--text);
+    border-radius: var(--radius);
+    font-size: 13px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+  }
+  .btn-export:hover { border-color: var(--text-muted); background: var(--bg); }
+
+  /* ===== PRINT AREA (screen: hidden) ===== */
+  #print-area { display: none; }
+
+  /* ===== PRINT STYLES ===== */
+  @media print {
+    body > *                { display: none !important; }
+    #print-area             { display: block !important; font-family: 'Georgia', serif; color: #1a1a1a; }
+    .print-page             { padding: 20mm 18mm; page-break-after: always; }
+    .print-page:last-child  { page-break-after: auto; }
+    .print-header           { display: flex; justify-content: space-between; align-items: flex-end; border-bottom: 2px solid #1a1a1a; padding-bottom: 8px; margin-bottom: 20px; }
+    .print-logo             { font-size: 13px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; }
+    .print-date             { font-size: 11px; color: #555; }
+    .print-client           { font-size: 22px; font-weight: 700; margin-bottom: 24px; }
+    .print-section          { margin-bottom: 18px; }
+    .print-section-label    { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.12em; color: #555; border-bottom: 1px solid #ddd; padding-bottom: 4px; margin-bottom: 10px; }
+    .print-task             { margin-bottom: 10px; padding-left: 10px; border-left: 2px solid #ccc; }
+    .print-task-title       { font-size: 13px; font-weight: 600; }
+    .print-task-desc-text   { font-size: 12px; color: #444; margin-top: 2px; }
+    .print-task-meta        { font-size: 10px; color: #777; margin-top: 3px; }
+    .print-comment          { font-size: 11px; color: #555; font-style: italic; margin-top: 3px; padding-left: 8px; border-left: 1px solid #ddd; }
+    .print-notes            { margin-top: 20px; }
+    .print-notes-text       { font-size: 12px; line-height: 1.65; white-space: pre-wrap; }
+    .print-reco             { margin-top: 20px; padding: 12px 14px; border: 1px solid #bbb; border-radius: 4px; background: #fafafa; }
+    .print-reco p           { font-size: 12.5px; line-height: 1.75; margin: 0; }
+    .print-dash-title       { font-size: 18px; font-weight: 700; margin-bottom: 20px; }
+    .print-dash-client      { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; color: #555; }
+    .print-task.urgent      { border-left-color: #c0392b; }
+    .print-task.todo        { border-left-color: #2980b9; }
+    .print-task.suivi       { border-left-color: #8e44ad; }
+    .print-task.verif       { border-left-color: #d35400; }
+    .print-task.traitee     { border-left-color: #27ae60; }
+    @page { margin: 0; }
+  }
 </style>
 </head>
 <body>
@@ -1244,6 +1293,7 @@
           <button class="confidential-toggle" id="fiche-conf-toggle" onclick="toggleFicheConfidential()">
             🔒 Confidentiel
           </button>
+          <button class="btn-export" onclick="openExportModal('fiche')" title="Exporter en PDF">📄 Exporter</button>
           <button class="btn-add" onclick="openNewTaskModal()">+ Tâche</button>
         </div>
         <div class="fiche-sections" id="fiche-sections"></div>
@@ -1258,8 +1308,9 @@
 
     <!-- DASHBOARD VIEW -->
     <div class="view" id="view-dashboard">
-      <div class="fiches-header">
+      <div class="fiches-header" style="display:flex;align-items:center;justify-content:space-between">
         <h1 class="fiches-title">Tableau de bord</h1>
+        <button class="btn-export" onclick="openExportModal('dashboard')" title="Exporter en PDF">📄 Exporter</button>
       </div>
       <div class="dashboard-filters" id="dashboard-filters">
         <span class="filter-label">Statut :</span>
@@ -1281,6 +1332,28 @@
 
 <!-- Sync status toast -->
 <div class="sync-status" id="sync-status"></div>
+
+<!-- Export Modal -->
+<div class="modal-overlay" id="modal-export" style="display:none" onclick="closeModal('modal-export')">
+  <div class="modal" onclick="event.stopPropagation()" style="max-width:360px">
+    <div class="modal-title">📄 Exporter en PDF</div>
+    <div id="export-option-fiche" class="form-group">
+      <button class="btn-save" style="width:100%;margin-bottom:0" onclick="exportPDF('fiche')">Cette fiche client</button>
+    </div>
+    <div class="form-group">
+      <button class="btn-save" style="width:100%;margin-bottom:0;background:var(--todo)" onclick="exportPDF('all')">Toutes les fiches</button>
+    </div>
+    <div class="form-group">
+      <button class="btn-save" style="width:100%;margin-bottom:0;background:var(--suivi)" onclick="exportPDF('assigned')">Tâches assignées (tableau de bord)</button>
+    </div>
+    <div class="modal-actions" style="margin-top:4px">
+      <button class="btn-cancel" onclick="closeModal('modal-export')">Annuler</button>
+    </div>
+  </div>
+</div>
+
+<!-- Print area (hidden on screen, visible when printing) -->
+<div id="print-area"></div>
 
 <!-- MODALS -->
 <!-- New Fiche Modal -->
@@ -2580,6 +2653,151 @@ function exportToExcel() {
 
   const date = new Date().toISOString().slice(0, 10);
   XLSX.writeFile(wb, `Pilot_sauvegarde_${date}.xlsx`);
+}
+
+// ===== EXPORT PDF =====
+function openExportModal(context) {
+  const ficheOption = document.getElementById('export-option-fiche');
+  ficheOption.style.display = (context === 'fiche' && currentFicheId) ? 'block' : 'none';
+  document.getElementById('modal-export').style.display = 'flex';
+}
+
+function exportPDF(mode) {
+  closeModal('modal-export');
+  const area = document.getElementById('print-area');
+
+  if (mode === 'fiche') {
+    area.innerHTML = buildPrintFiche(currentFicheId);
+  } else if (mode === 'all') {
+    const fiches = getVisibleFiches();
+    area.innerHTML = fiches.map(f => buildPrintFiche(f.id)).join('');
+  } else if (mode === 'assigned') {
+    area.innerHTML = buildPrintDashboard();
+  }
+
+  setTimeout(() => { window.print(); area.innerHTML = ''; }, 100);
+}
+
+function buildPrintFiche(ficheId) {
+  const fiche = data.fiches.find(f => f.id === ficheId);
+  if (!fiche) return '';
+  if (fiche.confidential && currentUser !== 'main') return '';
+
+  const tasks = getTasksForFiche(ficheId);
+  const dateStr = new Date().toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' });
+  const fpBadges = t => [t.fpFiduciaire && 'FP FIDUCIAIRE', t.fpSignature && 'FP SIGNATURE', t.fpJuridique && 'FP JURIDIQUE'].filter(Boolean).join(' · ');
+
+  const sections = [
+    { key: 'urgente', label: 'Urgentes', cls: 'urgent' },
+    { key: 'todo',    label: 'À faire',  cls: 'todo'   },
+    { key: 'suivi',   label: 'En suivi', cls: 'suivi'  },
+    { key: 'verification', label: 'En vérification', cls: 'verif' },
+    { key: 'traitee', label: 'Traitées', cls: 'traitee' },
+  ];
+
+  let html = `<div class="print-page">
+    <div class="print-header">
+      <span class="print-logo">Family Partners — Pilot</span>
+      <span class="print-date">${dateStr}</span>
+    </div>
+    <div class="print-client">${escHtml(fiche.name)}</div>`;
+
+  sections.forEach(s => {
+    const sTasks = tasks.filter(t => normalizeStatus(t.status) === s.key);
+    if (!sTasks.length) return;
+    html += `<div class="print-section">
+      <div class="print-section-label">${s.label}</div>`;
+    sTasks.forEach(t => {
+      const fps = fpBadges(t);
+      const comments = (t.comments || []).map(c => `<div class="print-comment">${escHtml(c.text)} — ${formatDate(c.date)}</div>`).join('');
+      html += `<div class="print-task ${s.cls}">
+        <div class="print-task-title">${escHtml(t.title || t.desc)}</div>
+        ${t.desc && t.title && t.desc !== t.title ? `<div class="print-task-desc-text">${escHtml(t.desc)}</div>` : ''}
+        <div class="print-task-meta">${t.assignee === 'main' ? 'Stéphane' : 'Félix'}${fps ? ' · ' + fps : ''} · ${formatDate(t.createdAt)}</div>
+        ${comments}
+      </div>`;
+    });
+    html += `</div>`;
+  });
+
+  const notes = fiche.notes || '';
+  if (notes.trim()) {
+    html += `<div class="print-notes">
+      <div class="print-section-label">Notes</div>
+      <div class="print-notes-text">${escHtml(notes)}</div>
+    </div>`;
+  }
+
+  // Recommendation
+  const active = tasks.filter(t => normalizeStatus(t.status) !== 'traitee');
+  if (active.length > 0) {
+    const urgent = active.filter(t => normalizeStatus(t.status) === 'urgente');
+    const verif  = active.filter(t => normalizeStatus(t.status) === 'verification');
+    const todo   = active.filter(t => normalizeStatus(t.status) === 'todo');
+    const suivi  = active.filter(t => normalizeStatus(t.status) === 'suivi');
+    const jd = ts => ts.map(t => `"${(t.title || t.desc) || ''}"`).join(', ');
+    const sentences = [];
+    if (urgent.length === 1) sentences.push(`Action urgente : ${jd(urgent)}.`);
+    else if (urgent.length > 1) sentences.push(`${urgent.length} actions urgentes : ${jd(urgent)}.`);
+    if (verif.length) sentences.push(`En vérification : ${jd(verif)}.`);
+    if (todo.length) sentences.push(`À planifier : ${jd(todo)}.`);
+    if (suivi.length) sentences.push(`En suivi : ${jd(suivi)}.`);
+    if (urgent.length === 0 && sentences.length) sentences.unshift('Aucune urgence.');
+    if (sentences.length) {
+      html += `<div class="print-reco">
+        <div class="print-section-label">Recommandation</div>
+        <p>${sentences.join(' ')}</p>
+      </div>`;
+    }
+  }
+
+  html += `</div>`;
+  return html;
+}
+
+function buildPrintDashboard() {
+  const dateStr = new Date().toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' });
+  const fpBadges = t => [t.fpFiduciaire && 'FP FIDUCIAIRE', t.fpSignature && 'FP SIGNATURE', t.fpJuridique && 'FP JURIDIQUE'].filter(Boolean).join(' · ');
+
+  let tasks = data.tasks.filter(t => {
+    if (t.confidential && currentUser !== 'main') return false;
+    const fiche = data.fiches.find(f => f.id === t.ficheId);
+    if (fiche && fiche.confidential && currentUser !== 'main') return false;
+    return true;
+  }).map(t => ({ ...t, status: normalizeStatus(t.status) }));
+
+  if (dashboardFilters.status !== 'all') tasks = tasks.filter(t => t.status === dashboardFilters.status);
+  if (dashboardFilters.assignee !== 'all') tasks = tasks.filter(t => t.assignee === dashboardFilters.assignee);
+
+  const order = { urgente: 0, todo: 1, suivi: 2, verification: 3, traitee: 4 };
+  tasks.sort((a, b) => (order[a.status] ?? 0) - (order[b.status] ?? 0));
+
+  const assigneeLabel = dashboardFilters.assignee === 'main' ? 'Stéphane' : dashboardFilters.assignee === 'junior' ? 'Félix' : 'Tous';
+  const statusLabel2 = { all: 'Toutes', urgente: 'Urgentes', todo: 'À faire', suivi: 'Suivi', verification: 'Vérification', traitee: 'Traitées' }[dashboardFilters.status] || '';
+
+  let html = `<div class="print-page">
+    <div class="print-header">
+      <span class="print-logo">Family Partners — Pilot</span>
+      <span class="print-date">${dateStr}</span>
+    </div>
+    <div class="print-dash-title">Tableau de bord — ${statusLabel2} — ${assigneeLabel}</div>`;
+
+  tasks.forEach(t => {
+    const fiche = data.fiches.find(f => f.id === t.ficheId);
+    const cls = { urgente: 'urgent', todo: 'todo', suivi: 'suivi', verification: 'verif', traitee: 'traitee' }[t.status] || '';
+    const fps = fpBadges(t);
+    const comments = (t.comments || []).map(c => `<div class="print-comment">${escHtml(c.text)} — ${formatDate(c.date)}</div>`).join('');
+    html += `<div class="print-task ${cls}" style="margin-bottom:12px">
+      <div class="print-dash-client">${fiche ? escHtml(fiche.name) : 'Autre'}</div>
+      <div class="print-task-title">${escHtml(t.title || t.desc)}</div>
+      ${t.desc && t.title && t.desc !== t.title ? `<div class="print-task-desc-text">${escHtml(t.desc)}</div>` : ''}
+      <div class="print-task-meta">${t.assignee === 'main' ? 'Stéphane' : 'Félix'}${fps ? ' · ' + fps : ''} · ${formatDate(t.createdAt)}</div>
+      ${comments}
+    </div>`;
+  });
+
+  html += `</div>`;
+  return html;
 }
 
 // Init
