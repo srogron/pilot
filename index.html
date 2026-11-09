@@ -1420,6 +1420,9 @@
       <label class="form-checkbox">
         <input type="checkbox" id="new-task-fp-juridique"> FP JURIDIQUE
       </label>
+      <label class="form-checkbox">
+        <input type="checkbox" id="new-task-fp-assurances"> FP ASSURANCES
+      </label>
     </div>
     <div class="form-group">
       <label class="form-checkbox">
@@ -1480,6 +1483,9 @@
       </label>
       <label class="form-checkbox">
         <input type="checkbox" id="edit-task-fp-juridique"> FP JURIDIQUE
+      </label>
+      <label class="form-checkbox">
+        <input type="checkbox" id="edit-task-fp-assurances"> FP ASSURANCES
       </label>
     </div>
     <div class="form-group">
@@ -2111,6 +2117,7 @@ function renderTaskItem(t) {
         ${t.fpFiduciaire ? '<span class="task-confidential-icon" style="color:var(--todo)">FP FIDUCIAIRE</span>' : ''}
         ${t.fpSignature ? '<span class="task-confidential-icon" style="color:var(--suivi)">FP SIGNATURE</span>' : ''}
         ${t.fpJuridique ? '<span class="task-confidential-icon" style="color:var(--urgent)">FP JURIDIQUE</span>' : ''}
+        ${t.fpAssurances ? '<span class="task-confidential-icon" style="color:var(--verification)">FP ASSURANCES</span>' : ''}
         ${t.confidential ? '<span class="task-confidential-icon">🔒</span>' : ''}
         ${statusHistory.length > 0 ? `<span class="task-date" style="color:var(--text-muted);font-style:italic">Modifié ${formatDateTime(statusHistory[statusHistory.length-1].date)}</span>` : ''}
       </div>
@@ -2270,6 +2277,7 @@ function openNewTaskModal(status) {
   document.getElementById('new-task-fp-fiduciaire').checked = false;
   document.getElementById('new-task-fp-signature').checked = false;
   document.getElementById('new-task-fp-juridique').checked = false;
+  document.getElementById('new-task-fp-assurances').checked = false;
   document.getElementById('modal-new-task').style.display = 'flex';
   setTimeout(() => document.getElementById('new-task-title').focus(), 100);
 }
@@ -2290,6 +2298,7 @@ function createTask() {
     fpFiduciaire: document.getElementById('new-task-fp-fiduciaire').checked,
     fpSignature: document.getElementById('new-task-fp-signature').checked,
     fpJuridique: document.getElementById('new-task-fp-juridique').checked,
+    fpAssurances: document.getElementById('new-task-fp-assurances').checked,
     createdAt: now(),
     comments: [],
     statusHistory: [{ status: initialStatus, date: now(), user: currentUser }]
@@ -2315,6 +2324,7 @@ function openEditTask(taskId) {
   document.getElementById('edit-task-fp-fiduciaire').checked = !!t.fpFiduciaire;
   document.getElementById('edit-task-fp-signature').checked = !!t.fpSignature;
   document.getElementById('edit-task-fp-juridique').checked = !!t.fpJuridique;
+  document.getElementById('edit-task-fp-assurances').checked = !!t.fpAssurances;
 
   const comments = t.comments && t.comments.length > 0 ? [...t.comments].reverse() : [];
   const section = document.getElementById('edit-task-comments-section');
@@ -2355,6 +2365,7 @@ function saveEditTask() {
   t.fpFiduciaire = document.getElementById('edit-task-fp-fiduciaire').checked;
   t.fpSignature = document.getElementById('edit-task-fp-signature').checked;
   t.fpJuridique = document.getElementById('edit-task-fp-juridique').checked;
+  t.fpAssurances = document.getElementById('edit-task-fp-assurances').checked;
   if (statusChanged) {
     if (!t.statusHistory) t.statusHistory = [];
     t.statusHistory.push({ status: newStatus, date: now(), user: currentUser });
@@ -2534,6 +2545,7 @@ function renderDashboard() {
           ${t.fpFiduciaire ? '<span class="task-confidential-icon" style="color:var(--todo)">FP FIDUCIAIRE</span>' : ''}
           ${t.fpSignature ? '<span class="task-confidential-icon" style="color:var(--suivi)">FP SIGNATURE</span>' : ''}
           ${t.fpJuridique ? '<span class="task-confidential-icon" style="color:var(--urgent)">FP JURIDIQUE</span>' : ''}
+          ${t.fpAssurances ? '<span class="task-confidential-icon" style="color:var(--verification)">FP ASSURANCES</span>' : ''}
           ${t.confidential ? '<span style="font-size:11px">🔒</span>' : ''}
         </div>
       </div>`;
@@ -2685,7 +2697,7 @@ function buildPrintFiche(ficheId) {
 
   const tasks = getTasksForFiche(ficheId);
   const dateStr = new Date().toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' });
-  const fpBadges = t => [t.fpFiduciaire && 'FP FIDUCIAIRE', t.fpSignature && 'FP SIGNATURE', t.fpJuridique && 'FP JURIDIQUE'].filter(Boolean).join(' · ');
+  const fpBadges = t => [t.fpFiduciaire && 'FP FIDUCIAIRE', t.fpSignature && 'FP SIGNATURE', t.fpJuridique && 'FP JURIDIQUE', t.fpAssurances && 'FP ASSURANCES'].filter(Boolean).join(' · ');
 
   const sections = [
     { key: 'urgente', label: 'Urgentes', cls: 'urgent' },
@@ -2757,7 +2769,7 @@ function buildPrintFiche(ficheId) {
 
 function buildPrintDashboard() {
   const dateStr = new Date().toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' });
-  const fpBadges = t => [t.fpFiduciaire && 'FP FIDUCIAIRE', t.fpSignature && 'FP SIGNATURE', t.fpJuridique && 'FP JURIDIQUE'].filter(Boolean).join(' · ');
+  const fpBadges = t => [t.fpFiduciaire && 'FP FIDUCIAIRE', t.fpSignature && 'FP SIGNATURE', t.fpJuridique && 'FP JURIDIQUE', t.fpAssurances && 'FP ASSURANCES'].filter(Boolean).join(' · ');
 
   let tasks = data.tasks.filter(t => {
     if (t.confidential && currentUser !== 'main') return false;
