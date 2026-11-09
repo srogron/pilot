@@ -1415,10 +1415,10 @@
         <input type="checkbox" id="new-task-fp-fiduciaire"> FP FIDUCIAIRE
       </label>
       <label class="form-checkbox" style="margin-bottom:6px">
-        <input type="checkbox" id="new-task-fp-signature"> FP SIGNATURE
-      </label>
-      <label class="form-checkbox">
         <input type="checkbox" id="new-task-fp-juridique"> FP JURIDIQUE
+      </label>
+      <label class="form-checkbox" style="margin-bottom:6px">
+        <input type="checkbox" id="new-task-fp-signature"> FP SIGNATURE
       </label>
       <label class="form-checkbox">
         <input type="checkbox" id="new-task-fp-assurances"> FP ASSURANCES
@@ -1479,10 +1479,10 @@
         <input type="checkbox" id="edit-task-fp-fiduciaire"> FP FIDUCIAIRE
       </label>
       <label class="form-checkbox" style="margin-bottom:6px">
-        <input type="checkbox" id="edit-task-fp-signature"> FP SIGNATURE
-      </label>
-      <label class="form-checkbox">
         <input type="checkbox" id="edit-task-fp-juridique"> FP JURIDIQUE
+      </label>
+      <label class="form-checkbox" style="margin-bottom:6px">
+        <input type="checkbox" id="edit-task-fp-signature"> FP SIGNATURE
       </label>
       <label class="form-checkbox">
         <input type="checkbox" id="edit-task-fp-assurances"> FP ASSURANCES
@@ -2115,8 +2115,8 @@ function renderTaskItem(t) {
         <span class="task-date">📅 ${formatDate(t.createdAt)}</span>
         <span class="task-assignee">${assigneeLabel}</span>
         ${t.fpFiduciaire ? '<span class="task-confidential-icon" style="color:var(--todo)">FP FIDUCIAIRE</span>' : ''}
-        ${t.fpSignature ? '<span class="task-confidential-icon" style="color:var(--suivi)">FP SIGNATURE</span>' : ''}
         ${t.fpJuridique ? '<span class="task-confidential-icon" style="color:var(--urgent)">FP JURIDIQUE</span>' : ''}
+        ${t.fpSignature ? '<span class="task-confidential-icon" style="color:var(--suivi)">FP SIGNATURE</span>' : ''}
         ${t.fpAssurances ? '<span class="task-confidential-icon" style="color:var(--verification)">FP ASSURANCES</span>' : ''}
         ${t.confidential ? '<span class="task-confidential-icon">🔒</span>' : ''}
         ${statusHistory.length > 0 ? `<span class="task-date" style="color:var(--text-muted);font-style:italic">Modifié ${formatDateTime(statusHistory[statusHistory.length-1].date)}</span>` : ''}
@@ -2543,8 +2543,8 @@ function renderDashboard() {
           <span class="task-date">📅 ${formatDate(t.createdAt)}</span>
           <span class="task-assignee">${t.assignee === 'main' ? 'Stéphane' : 'Félix'}</span>
           ${t.fpFiduciaire ? '<span class="task-confidential-icon" style="color:var(--todo)">FP FIDUCIAIRE</span>' : ''}
-          ${t.fpSignature ? '<span class="task-confidential-icon" style="color:var(--suivi)">FP SIGNATURE</span>' : ''}
           ${t.fpJuridique ? '<span class="task-confidential-icon" style="color:var(--urgent)">FP JURIDIQUE</span>' : ''}
+          ${t.fpSignature ? '<span class="task-confidential-icon" style="color:var(--suivi)">FP SIGNATURE</span>' : ''}
           ${t.fpAssurances ? '<span class="task-confidential-icon" style="color:var(--verification)">FP ASSURANCES</span>' : ''}
           ${t.confidential ? '<span style="font-size:11px">🔒</span>' : ''}
         </div>
@@ -2697,7 +2697,7 @@ function buildPrintFiche(ficheId) {
 
   const tasks = getTasksForFiche(ficheId);
   const dateStr = new Date().toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' });
-  const fpBadges = t => [t.fpFiduciaire && 'FP FIDUCIAIRE', t.fpSignature && 'FP SIGNATURE', t.fpJuridique && 'FP JURIDIQUE', t.fpAssurances && 'FP ASSURANCES'].filter(Boolean).join(' · ');
+  const fpBadges = t => [t.fpFiduciaire && 'FP FIDUCIAIRE', t.fpJuridique && 'FP JURIDIQUE', t.fpSignature && 'FP SIGNATURE', t.fpAssurances && 'FP ASSURANCES'].filter(Boolean).join(' · ');
 
   const sections = [
     { key: 'urgente', label: 'Urgentes', cls: 'urgent' },
@@ -2769,7 +2769,7 @@ function buildPrintFiche(ficheId) {
 
 function buildPrintDashboard() {
   const dateStr = new Date().toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' });
-  const fpBadges = t => [t.fpFiduciaire && 'FP FIDUCIAIRE', t.fpSignature && 'FP SIGNATURE', t.fpJuridique && 'FP JURIDIQUE', t.fpAssurances && 'FP ASSURANCES'].filter(Boolean).join(' · ');
+  const fpBadges = t => [t.fpFiduciaire && 'FP FIDUCIAIRE', t.fpJuridique && 'FP JURIDIQUE', t.fpSignature && 'FP SIGNATURE', t.fpAssurances && 'FP ASSURANCES'].filter(Boolean).join(' · ');
 
   let tasks = data.tasks.filter(t => {
     if (t.confidential && currentUser !== 'main') return false;
