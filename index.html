@@ -1315,16 +1315,22 @@
       </div>
       <div class="dashboard-filters" id="dashboard-filters">
         <span class="filter-label">Statut :</span>
-        <button class="filter-btn active" onclick="setFilter('status','all', this)">Tous</button>
-        <button class="filter-btn" onclick="setFilter('status','urgente', this)">🔴 Urgentes</button>
-        <button class="filter-btn" onclick="setFilter('status','todo', this)">🔵 À faire</button>
-        <button class="filter-btn" onclick="setFilter('status','suivi', this)">🟣 Suivi</button>
-        <button class="filter-btn" onclick="setFilter('status','verification', this)">🔍 Vérification</button>
-        <button class="filter-btn" onclick="setFilter('status','traitee', this)">✅ Traitées</button>
+        <button class="filter-btn active" data-group="status" onclick="setFilter('status','all', this)">Tous</button>
+        <button class="filter-btn" data-group="status" onclick="setFilter('status','urgente', this)">🔴 Urgentes</button>
+        <button class="filter-btn" data-group="status" onclick="setFilter('status','todo', this)">🔵 À faire</button>
+        <button class="filter-btn" data-group="status" onclick="setFilter('status','suivi', this)">🟣 Suivi</button>
+        <button class="filter-btn" data-group="status" onclick="setFilter('status','verification', this)">🔍 Vérification</button>
+        <button class="filter-btn" data-group="status" onclick="setFilter('status','traitee', this)">✅ Traitées</button>
         <span class="filter-label" style="margin-left:8px">Assigné :</span>
-        <button class="filter-btn active" onclick="setFilter('assignee','all', this)" id="filter-assignee-all">Tous</button>
-        <button class="filter-btn" onclick="setFilter('assignee','main', this)">Stéphane</button>
-        <button class="filter-btn" onclick="setFilter('assignee','junior', this)">Félix</button>
+        <button class="filter-btn active" data-group="assignee" onclick="setFilter('assignee','all', this)" id="filter-assignee-all">Tous</button>
+        <button class="filter-btn" data-group="assignee" onclick="setFilter('assignee','main', this)">Stéphane</button>
+        <button class="filter-btn" data-group="assignee" onclick="setFilter('assignee','junior', this)">Félix</button>
+        <span class="filter-label" style="margin-left:8px">FP :</span>
+        <button class="filter-btn active" data-group="fp" onclick="setFilter('fp','all', this)">Tous</button>
+        <button class="filter-btn" data-group="fp" onclick="setFilter('fp','fiduciaire', this)">FP FIDUCIAIRE</button>
+        <button class="filter-btn" data-group="fp" onclick="setFilter('fp','juridique', this)">FP JURIDIQUE</button>
+        <button class="filter-btn" data-group="fp" onclick="setFilter('fp','signature', this)">FP SIGNATURE</button>
+        <button class="filter-btn" data-group="fp" onclick="setFilter('fp','assurances', this)">FP ASSURANCES</button>
       </div>
       <div class="dashboard-grid" id="dashboard-grid"></div>
     </div>
@@ -1539,7 +1545,7 @@ let currentUserEmail = null;
 let currentUserName = null;
 let currentFicheId = null;
 let data = { fiches: [], tasks: [], config: {} };
-let dashboardFilters = { status: 'all', assignee: 'all' };
+let dashboardFilters = { status: 'all', assignee: 'all', fp: 'all' };
 let syncInterval = null;
 let sheetId = "https://script.google.com/macros/s/AKfycbwGar3a6g0RcPnPL7bCtlwQYL22dCI5TIdwoMiuCS4hK48kLpWmTXWRJzMtHQRwBrHN_w/exec";
 let useSheets = true;
@@ -2519,6 +2525,10 @@ function renderDashboard() {
 
   if (dashboardFilters.status !== 'all') tasks = tasks.filter(t => t.status === dashboardFilters.status);
   if (dashboardFilters.assignee !== 'all') tasks = tasks.filter(t => t.assignee === dashboardFilters.assignee);
+  if (dashboardFilters.fp === 'fiduciaire') tasks = tasks.filter(t => t.fpFiduciaire);
+  else if (dashboardFilters.fp === 'juridique') tasks = tasks.filter(t => t.fpJuridique);
+  else if (dashboardFilters.fp === 'signature') tasks = tasks.filter(t => t.fpSignature);
+  else if (dashboardFilters.fp === 'assurances') tasks = tasks.filter(t => t.fpAssurances);
 
   if (tasks.length === 0) {
     grid.innerHTML = '<div class="empty-state" style="grid-column:1/-1"><div class="empty-icon">✅</div><div class="empty-text">Aucune tâche pour ces filtres</div></div>';
@@ -2558,18 +2568,7 @@ let activeAssigneeFilter = null;
 
 function setFilter(type, value, btn) {
   dashboardFilters[type] = value;
-  // Update button active state within group
-  const allBtns = document.querySelectorAll('.filter-btn');
-  // Find siblings (same group) — basic approach
-  if (type === 'status') {
-    document.querySelectorAll('.dashboard-filters .filter-btn').forEach((b, i) => {
-      if (i <= 5) b.classList.remove('active');
-    });
-  } else {
-    document.querySelectorAll('.dashboard-filters .filter-btn').forEach((b, i) => {
-      if (i > 5) b.classList.remove('active');
-    });
-  }
+  document.querySelectorAll(`.dashboard-filters .filter-btn[data-group="${type}"]`).forEach(b => b.classList.remove('active'));
   btn.classList.add('active');
   renderDashboard();
 }
@@ -2781,10 +2780,15 @@ function buildPrintDashboard() {
 
   if (dashboardFilters.status !== 'all') tasks = tasks.filter(t => t.status === dashboardFilters.status);
   if (dashboardFilters.assignee !== 'all') tasks = tasks.filter(t => t.assignee === dashboardFilters.assignee);
+  if (dashboardFilters.fp === 'fiduciaire') tasks = tasks.filter(t => t.fpFiduciaire);
+  else if (dashboardFilters.fp === 'juridique') tasks = tasks.filter(t => t.fpJuridique);
+  else if (dashboardFilters.fp === 'signature') tasks = tasks.filter(t => t.fpSignature);
+  else if (dashboardFilters.fp === 'assurances') tasks = tasks.filter(t => t.fpAssurances);
 
   const order = { urgente: 0, todo: 1, suivi: 2, verification: 3, traitee: 4 };
   tasks.sort((a, b) => (order[a.status] ?? 0) - (order[b.status] ?? 0));
 
+  const fpLabel = { all: '', fiduciaire: ' · FP FIDUCIAIRE', juridique: ' · FP JURIDIQUE', signature: ' · FP SIGNATURE', assurances: ' · FP ASSURANCES' }[dashboardFilters.fp] || '';
   const assigneeLabel = dashboardFilters.assignee === 'main' ? 'Stéphane' : dashboardFilters.assignee === 'junior' ? 'Félix' : 'Tous';
   const statusLabel2 = { all: 'Toutes', urgente: 'Urgentes', todo: 'À faire', suivi: 'Suivi', verification: 'Vérification', traitee: 'Traitées' }[dashboardFilters.status] || '';
 
@@ -2793,7 +2797,7 @@ function buildPrintDashboard() {
       <span class="print-logo">Family Partners — Pilot</span>
       <span class="print-date">${dateStr}</span>
     </div>
-    <div class="print-dash-title">Tableau de bord — ${statusLabel2} — ${assigneeLabel}</div>`;
+    <div class="print-dash-title">Tableau de bord — ${statusLabel2} — ${assigneeLabel}${fpLabel}</div>`;
 
   tasks.forEach(t => {
     const fiche = data.fiches.find(f => f.id === t.ficheId);
